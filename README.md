@@ -20,6 +20,10 @@ AppDomain.CurrentDomain.GetAssemblies()
 ```csharp
 using com.bbbirder.DirectAttribute;
 
+//自定义属性需要继承DirectRetrieveAttribute
+class FooAttribute:DirectRetrieveAttribute {
+
+}
 //检索当前Domain下所有Assembly中所有FooAttribute
 var attributes = AttributeRetriever.GetAll<FooAttribute>(); 
 ```
