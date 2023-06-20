@@ -11,7 +11,7 @@ AppDomain.CurrentDomain.GetAssemblies()
         .SelectMany(m=>m.GetCustomAttributes(attrType)))
     .ToArray();
 ```
-> 众所周知，反射方法效率低，并且会产生大量GC。
+> 众所周知，反射方法效率低，并且会产生大量GC。如果你是一个Package Developer，在你开发的众多Package中可能有不少需要检索Attribute列表的情况，这无疑是灾难性的。（参考[基准测试结果](#基准测试结果)）
 
 ### DirectAttribute获取Attributes列表
 借助DirectAttribute，我们可以在运行时快速检索所有Attributes。
