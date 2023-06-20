@@ -10,6 +10,7 @@ namespace com.bbbirder.DirectAttribute{
             | BindingFlags.Public
             | BindingFlags.NonPublic
             | BindingFlags.Static
+            | BindingFlags.DeclaredOnly
             ;
         /// <summary>
         /// Retrieve Attribute T in all Assemblies
