@@ -63,4 +63,5 @@ Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrie
     * `GeneratedDirectRetrieveAttribute` 中增加目标Attribute字段
     * `#NET7_0_OR_GREATER` 宏判断和成员排序
     * 增加 `GeneratedDirectRetrieveAttribute` 数组的起始元信息，实现遍历早停。
+    * 增量式检索（多帧异步）
 * Auto CI
