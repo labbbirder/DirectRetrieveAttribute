@@ -4,7 +4,7 @@ using System.Reflection;
 using com.bbbirder.DirectAttribute;
 
 namespace com.bbbirder.DirectAttribute{
-    static class AttributeRetriever{
+    public static class AttributeRetriever{
         static BindingFlags bindingFlags = 0
             | BindingFlags.Instance
             | BindingFlags.Public
