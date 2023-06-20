@@ -49,7 +49,13 @@ foreach(var attr in attributes){
 
 ### 基准测试结果
 ![benchmark](Documentation/benchmark.jpg)
-> `GetMemberAttributesDefault`使用传统方式检索所有Attribute，`GetMemberAttributesDirect`使用`DirectAttribute`提供的方式检索所有Attribute。
+* `GetMemberAttributesDefault`使用传统方式检索所有Attribute，
+* `GetMemberAttributesWithReferenceCheck`使用传统方式检索，但是先检查Assembly之间的依赖关系。
+* `GetMemberAttributesDirect`使用`DirectAttribute`提供的方式检索所有Attribute。
+
+在VisualStudio和Unity测试总结：`DirectAttribute`方式在运行时间上，比传统方式优化了95%左右；在内存消耗上比传统方式优化了99%以上。并且随着用户代码的体积增长，`DirectAttribute`方式的开销几乎不变。
+
+[基准测试源码](Documentation/benchmark.md)
 ## 安装
 Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
 
