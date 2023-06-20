@@ -37,7 +37,7 @@ class Player{
 }
 
 //检索当前Domain下所有Assembly中所有FooAttribute
-var attributes = AttributeRetriever.GetAll<FooAttribute>(); 
+FooAttribute[] attributes = AttributeRetriever.GetAll<FooAttribute>(); 
 foreach(var attr in attributes){
     print($"{attr.targetType} {attr.memberInfo?.Name} {attr.title}"); 
 }
