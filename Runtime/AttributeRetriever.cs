@@ -12,6 +12,7 @@ namespace com.bbbirder.DirectAttribute{
             | BindingFlags.Static
             | BindingFlags.DeclaredOnly
             ;
+            
         /// <summary>
         /// Retrieve Attribute T in all Assemblies
         /// </summary>
@@ -20,7 +21,7 @@ namespace com.bbbirder.DirectAttribute{
         public static T[] GetAll<T>() where T:DirectRetrieveAttribute{
             var attrType = typeof(T);
             return AppDomain.CurrentDomain.GetAssemblies()
-                //.Where(a=>a.GetReferencedAssemblies().Any(a=>a.ToString()== attrAssemblyName))
+                .Where(a=>a.IsDefined(typeof(GeneratedDirectRetrieveAttribute)))
                 .SelectMany(a => GetAll<T>(a))
                 .ToArray();
         }
