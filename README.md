@@ -1,4 +1,4 @@
-# DirectAttribute
+# DirectRetrieveAttribute
 快速获取用户自定义Attribute；支持通过Attribute获取目标Type和目标MemberInfo。
 
 ## 传统方式对比
@@ -16,21 +16,43 @@ AppDomain.CurrentDomain.GetAssemblies()
 ### DirectAttribute获取属性列表
 借助DirectAttribute，我们可以在运行时快速检索所有Attributes。
 
-这是一个示例：
+这是一个完整示例：
 ```csharp
 using com.bbbirder.DirectAttribute;
 
 //自定义属性需要继承DirectRetrieveAttribute
 class FooAttribute:DirectRetrieveAttribute {
-
+    public string title { get; private set; }
+    public FooAttribute(string title){
+        this.title = title;
+    }
 }
+
+[Foo("whoami")]
+class Player{
+    [Foo("Hello")]
+    void Salute(){
+
+    }
+}
+
 //检索当前Domain下所有Assembly中所有FooAttribute
 var attributes = AttributeRetriever.GetAll<FooAttribute>(); 
+foreach(var attr in attributes){
+    print($"{attr.targetType} {attr.memberInfo?.Name} {attr.title}"); 
+}
+// output: 
+//    Player null whoami
+//    Player Salute Hello
 ```
+> 继承自`DirectRetrieveAttribute`的自定义Attribute，可以通过`targetType`访问目标类型，通过`memberInfo`访问目标成员（可能为空）。前提是通过`AttributeRetriever.GetAll<T>`检索到后，`AttributeRetriever.GetAll<T>`会在检索过程中填充这两个property。
 
 ### 基准测试结果
 ![benchmark](Documentation/benchmark.jpg)
 > `GetMemberAttributesDefault`使用传统方式检索所有属性，`GetMemberAttributesDirect`使用`DirectAttribute`提供的方式检索所有属性。
+## 安装
+Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
+
 
 ## 实现原理
 首先使用源生成方式写入assembly属性列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。在运行时直接从Assembly中读取`GeneratedDirectRetrieveAttribute`。
