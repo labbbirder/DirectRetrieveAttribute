@@ -45,7 +45,7 @@ foreach(var attr in attributes){
 //    Player null whoami
 //    Player Salute Hello
 ```
-> 继承自`DirectRetrieveAttribute`的自定义Attribute，可以通过`targetType`访问目标类型，通过`memberInfo`访问目标成员（可能为空）。但必须是通过`AttributeRetriever.GetAll<T>`返回的Attribute，`AttributeRetriever.GetAll<T>`会在检索过程中填充这两个property。
+> 继承自DirectRetrieveAttribute的自定义Attribute可以通过`targetType`访问目标类型，通过`memberInfo`访问目标成员（可能为空）。但必须是通过AttributeRetriever.GetAll<T>返回的Attribute，AttributeRetriever.GetAll<T>会在检索过程中填充这两个property。
 
 ### 基准测试结果
 ![benchmark](Documentation/benchmark.jpg)
