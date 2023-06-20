@@ -2,7 +2,7 @@
 快速获取用户自定义Attribute；支持通过Attribute获取目标Type和目标MemberInfo。
 
 ## 传统方式对比
-### 传统方式获取属性列表
+### 传统方式获取Attributes列表
 在传统方式下，我们可能会这样获取所有自定义属性：
 ```csharp
 AppDomain.CurrentDomain.GetAssemblies()
@@ -13,14 +13,14 @@ AppDomain.CurrentDomain.GetAssemblies()
 ```
 > 众所周知，反射方法效率低，并且会产生大量GC。
 
-### DirectAttribute获取属性列表
+### DirectAttribute获取Attributes列表
 借助DirectAttribute，我们可以在运行时快速检索所有Attributes。
 
 这是一个完整示例：
 ```csharp
 using com.bbbirder.DirectAttribute;
 
-//自定义属性需要继承DirectRetrieveAttribute
+//自定义Attribute需要继承DirectRetrieveAttribute
 class FooAttribute:DirectRetrieveAttribute {
     public string title { get; private set; }
     public FooAttribute(string title){
@@ -49,18 +49,18 @@ foreach(var attr in attributes){
 
 ### 基准测试结果
 ![benchmark](Documentation/benchmark.jpg)
-> `GetMemberAttributesDefault`使用传统方式检索所有属性，`GetMemberAttributesDirect`使用`DirectAttribute`提供的方式检索所有属性。
+> `GetMemberAttributesDefault`使用传统方式检索所有Attribute，`GetMemberAttributesDirect`使用`DirectAttribute`提供的方式检索所有Attribute。
 ## 安装
 Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
 
 
 ## 实现原理
-首先使用源生成方式写入assembly属性列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。在运行时直接从Assembly中读取`GeneratedDirectRetrieveAttribute`。
+首先使用源生成方式写入assembly Attribute列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。在运行时直接从Assembly中读取`GeneratedDirectRetrieveAttribute`。
 
 ## Todo List
 * **支持 Inherit 参数**
 * 还可以继续优化，但是收益不大；欢迎PR。
-    * `GeneratedDirectRetrieveAttribute` 中增加目标属性字段
+    * `GeneratedDirectRetrieveAttribute` 中增加目标Attribute字段
     * `#NET7_0_OR_GREATER` 宏判断和成员排序
     * 增加 `GeneratedDirectRetrieveAttribute` 数组的起始元信息，实现遍历早停。
 * Auto CI
