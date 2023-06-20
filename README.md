@@ -53,7 +53,12 @@ foreach(var attr in attributes){
 * `GetMemberAttributesWithReferenceCheck`使用传统方式检索，但是先检查Assembly之间的依赖关系。
 * `GetMemberAttributesDirect`使用`DirectAttribute`提供的方式检索所有Attribute。
 
-在VisualStudio和Unity测试总结：`DirectAttribute`方式在运行时间上，比传统方式优化了95%左右；在内存消耗上比传统方式优化了99%以上。并且随着用户代码的体积增长，`DirectAttribute`方式的开销几乎不变。
+可以得出结论如下：
+
+||运行时间| 内存消耗|每用户代码体积增长|
+|--|--|--|--|
+|传统方式|100%|100%|开销线性增加|
+|Direct|<5%|<1%|开销几乎不变|
 
 [基准测试源码](Documentation/benchmark.md)
 ## 安装
