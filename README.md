@@ -88,3 +88,5 @@ Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrie
     * 增加 `GeneratedDirectRetrieveAttribute` 数组的起始元信息，实现遍历早停。
     * 增量式检索（多帧异步）
 * Auto CI
+## 注意事项
+1. 因为检索操作通常只在开始时运行一次，所以AttributeRetriever并不会缓存任何数据。如果你希望在运行时多次检索，请自行酌情缓存。
