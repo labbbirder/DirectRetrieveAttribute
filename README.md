@@ -1,12 +1,17 @@
 # DirectRetrieveAttribute
 快速获取用户自定义Attribute；支持通过Attribute获取目标Type和目标MemberInfo。
 
-## 快速开始
+功能和优势：
 
 * 近乎0开销检索所有特定Attribute
 * 近乎0开销检索所有特定子类或接口实现类
 * 通过Attribute实例直接获取标记的类或标记的成员
-* 支持泛型
+
+
+## 快速开始
+
+### 安装
+Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
 
 ### 检索Attribute
 
@@ -112,12 +117,11 @@ AppDomain.CurrentDomain.GetAssemblies()
 |传统方式|100%|100%|开销线性增加|
 |Direct|<0.1%|<0.1%|开销几乎不变|
 
-## 安装
-Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
-
 
 ## 实现原理
 首先使用源生成方式写入assembly Attribute列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。在运行时直接从Assembly中读取`GeneratedDirectRetrieveAttribute`。
+
+对于Inherit的Attribute，会额外记录他们的子类。
 
 ## Todo List
 * ~~**支持 Inherit 参数**~~
