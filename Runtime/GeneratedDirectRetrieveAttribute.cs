@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace com.bbbirder.DirectAttribute
+namespace com.bbbirder
 {
     [AttributeUsage(AttributeTargets.Assembly,AllowMultiple = true)]
-    public class GeneratedDirectRetrieveAttribute:Attribute
+    public sealed partial class GeneratedDirectRetrieveAttribute:Attribute
     {
         public Type type { get; private set; }
         public string memberName { get; private set; }

@@ -1,7 +1,7 @@
 using System;
 
-namespace com.bbbirder.DirectAttribute{
-    public class WeakHolder<T> where T :class{
+namespace com.bbbirder{
+    class WeakHolder<T> where T :class{
         WeakReference<T> wr;
         Func<T> creator;
         public T Value {

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Reflection;
 
-namespace com.bbbirder.DirectAttribute
+namespace com.bbbirder
 {
-    public class DirectRetrieveAttribute : Attribute
+    public partial class DirectRetrieveAttribute : Attribute
     {
-        public Type targetType {get; internal set;}
-        public MemberInfo memberInfo {get; internal set;}
+        public Type targetType { get; internal set; }
+        public MemberInfo memberInfo { get; internal set; }
     }
 }
