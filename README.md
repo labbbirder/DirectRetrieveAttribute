@@ -40,6 +40,8 @@ foreach(var attr in attributes){
 //    Player Salute Hello
 ```
 
+> 继承自`DirectRetrieveAttribute`的自定义Attribute可以通过`targetType`访问目标类型，通过`memberInfo`访问目标成员（可能为空）。但必须是通过`Retriever.GetAllAttributes<T>`返回的Attribute，`Retriever.GetAllAttributes<T>`会在检索过程中填充这两个property。
+
 
 
 ### 检索子类型
@@ -74,7 +76,6 @@ foreach(var type in types){
 接口的实现检索与上例类似。
 
 ## 传统方式对比
-相对于传统方式，我们引入一种新的方式DirectRetrieveAttribute，以下简称`Direct 方式`
 ### 传统方式获取Attributes列表
 在传统方式下，我们可能会这样获取所有自定义属性：
 ```csharp
@@ -85,38 +86,6 @@ AppDomain.CurrentDomain.GetAssemblies()
     .ToArray();
 ```
 > 众所周知，反射方法效率低，并且会产生大量GC。如果你是一个Package Developer，在你开发的众多Package中可能有不少需要检索Attribute列表的情况，这无疑是灾难性的。（参考[基准测试结果](#基准测试结果)）
-
-### Direct方式获取Attributes列表
-这是一个完整示例：
-```csharp
-using com.bbbirder;
-
-//自定义Attribute需要继承DirectRetrieveAttribute
-class FooAttribute:DirectRetrieveAttribute {
-    public string title { get; private set; }
-    public FooAttribute(string title){
-        this.title = title;
-    }
-}
-
-[Foo("whoami")]
-class Player{
-    [Foo("Hello")]
-    void Salute(){
-
-    }
-}
-
-//检索当前Domain下所有Assembly中所有FooAttribute
-FooAttribute[] attributes = Retriever.GetAllAttributes<FooAttribute>(); 
-foreach(var attr in attributes){
-    print($"{attr.targetType} {attr.memberInfo?.Name} {attr.title}"); 
-}
-// output: 
-//    Player null whoami
-//    Player Salute Hello
-```
-> 继承自`DirectRetrieveAttribute`的自定义Attribute可以通过`targetType`访问目标类型，通过`memberInfo`访问目标成员（可能为空）。但必须是通过`Retriever.GetAllAttributes<T>`返回的Attribute，`Retriever.GetAllAttributes<T>`会在检索过程中填充这两个property。
 
 ### 基准测试结果
 ![benchmark](Documentation/benchmark.jpg)
