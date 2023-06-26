@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	<LangVersion>9.0</LangVersion>
+	<Authors>bbbirder</Authors>
+	<AssemblyVersion>1.2.*</AssemblyVersion>
+	<FileVersion>1.2.1</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Deterministic>False</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Deterministic>False</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
+  </ItemGroup>
+
+  <!--直接引用项目工程有些bug-->
+  <ItemGroup>
+    <Compile Include="../Common/AttributeList.cs" Link="Attributes\DirectAttribute.cs" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Compile Update="Diagnostics\NotAccessible.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>NotAccessible.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Diagnostics\NotGenerated.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>NotGenerated.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Diagnostics\NotAccessible.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>NotAccessible.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Diagnostics\NotGenerated.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>NotGenerated.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="set input=$(OutDir)$(AssemblyName).dll&#xD;&#xA;set output=..\\DirectAttribute.sg.dll&#xD;&#xA;echo %25input%25 to %25output%25 &#xD;&#xA;copy /Y %25input%25 %25output%25" />
+  </Target>
+
+</Project>

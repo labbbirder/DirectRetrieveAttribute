@@ -1,0 +1,5 @@
+VSProj~/**/obj/
+VSProj~/**/bin/Debug/
+VSProj~/**/bin/Release/
+VSProj~/**/.vs
+VSProj~/**/*.dll
