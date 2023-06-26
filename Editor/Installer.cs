@@ -14,7 +14,7 @@ namespace com.bbbirder.unityeditor{
             "DirectAttributes/DirectAttribute.sg.dll";
         static Installer m_Instance;
         static Installer Instance => m_Instance ??= new();
-
+        static bool entered = false;
         private Installer():base(SourceDllPath)
         {
 
@@ -34,6 +34,9 @@ namespace com.bbbirder.unityeditor{
         }
         
         static void OnEditorFocus(){
+            //not reenterable
+            if(entered) return;
+            entered = true;
             Instance.RunWorkFlow();
         }
     }

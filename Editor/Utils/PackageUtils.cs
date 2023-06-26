@@ -10,6 +10,9 @@ namespace com.bbbirder.unityeditor{
         public static string GetPackageVersion([CallerFilePath]string csPath = null){
             return (string)GetPackageJson(csPath)["version"];
         }
+        public static string GetPackageName([CallerFilePath]string csPath = null){
+            return (string)GetPackageJson(csPath)["name"];
+        }
 
         public static JObject GetPackageJson([CallerFilePath]string csPath = null){
             var path = GetPackagePath(csPath);
@@ -36,10 +39,6 @@ namespace com.bbbirder.unityeditor{
                 cur = tmp;
             }
             throw new($"file is not under a valid Packages folder:{csPath}");
-        }
-        
-        public static string GetPackageName([CallerFilePath]string csPath = null){
-            return (string)GetPackageJson(csPath)["name"];
         }
         
         public static bool IsOutDate(string targetPath,string srcPath){
