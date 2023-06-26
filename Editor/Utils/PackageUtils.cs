@@ -46,7 +46,10 @@ namespace com.bbbirder.unityeditor{
             if(!File.Exists(srcPath)) return false;
             var tarTime = File.GetLastWriteTimeUtc(targetPath);
             var srcTime = File.GetLastWriteTimeUtc(srcPath);
-            return tarTime < srcTime;
+            if(tarTime >= srcTime) return false; // target is newer
+            var tarBytes = File.ReadAllBytes(targetPath);
+            var srcBytes = File.ReadAllBytes(srcPath);
+            return !tarBytes.AsSpan().SequenceEqual(srcBytes); // file content compare
         }
 
         public static void UpdateFileDate(string filePath){
