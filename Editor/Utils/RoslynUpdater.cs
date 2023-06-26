@@ -11,13 +11,13 @@ namespace com.bbbirder.unityeditor{
     public abstract class RoslynUpdater{
         string SourceDllPath {get;}
 
-        string packageName {get;set;}
-        string packagePath {get;set;}
-        string packageVersion {get;set;}
+        protected string PackageName {get;set;}
+        protected string PackagePath {get;set;}
+        protected string PackageVersion {get;set;}
         
-        string ExportPath => "Assets/Plugins/"+packageName;
+        string ExportPath => "Assets/Plugins/"+PackageName;
         string AssetDllPath => Path.Join(ExportPath,Path.GetFileName(SourceDllPath));
-        string UnityPackagePath => Path.Join(packagePath,"plugin.unitypackage");
+        string UnityPackagePath => Path.Join(PackagePath,"plugin.unitypackage");
         
         bool HasNewSourceDll => PackageUtils.IsOutDate(AssetDllPath,SourceDllPath);
         bool HasNewPackage => PackageUtils.IsOutDate(AssetDllPath,UnityPackagePath);
@@ -27,22 +27,25 @@ namespace com.bbbirder.unityeditor{
                 throw new($"srcDllPath can't be empty");
             }
             SourceDllPath = srcDllPath;
-            packageName = PackageUtils.GetPackageName(csPath);
-            packagePath = PackageUtils.GetPackagePath(csPath);
-            packageVersion = PackageUtils.GetPackageVersion(csPath);
+            PackageName = PackageUtils.GetPackageName(csPath);
+            PackagePath = PackageUtils.GetPackagePath(csPath);
+            PackageVersion = PackageUtils.GetPackageVersion(csPath);
         }
-        protected void RunWorkFlow()
+        protected bool RunWorkFlow()
         {
-            if(string.IsNullOrEmpty(packageName)){
+            if(string.IsNullOrEmpty(PackageName)){
                 throw new($"should setup package first");
             }
             if(File.Exists(SourceDllPath) && HasNewSourceDll) {
                 UpdateUnityPackage();
+                return true;
             }else{
                 if(HasNewPackage){
                     InstallUnityPackage();
+                    return true;
                 }
             }
+            return false;
         }
         void UpdateUnityPackage(){
             var co = UpdatePackageProcessProgress().GetEnumerator();
@@ -88,7 +91,7 @@ namespace com.bbbirder.unityeditor{
                 AssetDllPath+".meta",
             }, UnityPackagePath, ExportPackageOptions.Recurse);
             AssetDatabase.Refresh();
-            PackageLog(packageName,"package updated!",packageVersion);
+            PackageLog(PackageName,"package updated!");
 
         }
         void InstallUnityPackage(){
@@ -96,7 +99,7 @@ namespace com.bbbirder.unityeditor{
             if(File.Exists(AssetDllPath)){
                 PackageUtils.UpdateFileDate(AssetDllPath);
             }
-            PackageLog(packageName,"plugin updated!",packageVersion);
+            PackageLog(PackageName,"plugin updated!");
         }
         static void PackageLog(params object[] args){
             Debug.Log("[Roslyn Updater] "+string.Join("  ",args));

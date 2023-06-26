@@ -10,8 +10,8 @@ using UnityEngine;
 namespace com.bbbirder.unityeditor{
     internal class Installer:RoslynUpdater
     {
-        const string SourceDllPath =
-            "DirectAttributes/DirectAttribute.sg.dll";
+        static string SourceDllPath =
+            Path.Join(PackageUtils.GetPackagePath(),"VSProj~/DirectAttribute.sg.dll");
         static Installer m_Instance;
         static Installer Instance => m_Instance ??= new();
         static bool entered = false;
@@ -36,8 +36,7 @@ namespace com.bbbirder.unityeditor{
         static void OnEditorFocus(){
             //not reenterable
             if(entered) return;
-            entered = true;
-            Instance.RunWorkFlow();
+            entered = Instance.RunWorkFlow();
         }
     }
 }
