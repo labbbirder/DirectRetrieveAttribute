@@ -17,8 +17,12 @@
 ## 快速开始
 
 ### 安装
+### via Git URL
 Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
-
+### via OpenUPM
+```bash
+openupm add com.bbbirder.directattribute
+```
 ### 检索Attribute
 
 ```csharp

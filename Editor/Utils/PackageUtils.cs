@@ -39,8 +39,7 @@ namespace com.bbbirder.unityeditor{
         }
         
         public static string GetPackageName([CallerFilePath]string csPath = null){
-            var path = GetPackagePath(csPath);
-            return Path.GetFileName(path);
+            return (string)GetPackageJson(csPath)["name"];
         }
         
         public static bool IsOutDate(string targetPath,string srcPath){
