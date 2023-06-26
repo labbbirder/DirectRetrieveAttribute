@@ -1,5 +1,7 @@
 # DirectRetrieveAttribute
-[![openupm](https://img.shields.io/npm/v/com.labbbirder/DirectRetrieveAttribute?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.labbbirder/DirectRetrieveAttribute/)
+![GitHub last commit](https://img.shields.io/github/last-commit/labbbirder/csreactive)
+![GitHub package.json version](https://img.shields.io/github/package-json/v/labbbirder/csreactive)
+[![openupm](https://img.shields.io/npm/v/com.bbbirder.directattribute?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.bbbirder.directattribute/)
 
 快速获取用户自定义Attribute；支持通过Attribute获取目标Type和目标MemberInfo。
 
