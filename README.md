@@ -129,15 +129,32 @@ AppDomain.CurrentDomain.GetAssemblies()
 
 
 ## 实现原理
-首先使用源生成方式写入assembly Attribute列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。在运行时直接从Assembly中读取`GeneratedDirectRetrieveAttribute`。
+开发者编辑代码时使用源生成方式写入assembly Attribute列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。
 
+使用反编译工具打开Unity自动生成的Dll，可以看到类似下面的额外元数据：
+```csharp
+[assembly: GeneratedDirectRetrieve(typeof(global::Program))]
+[assembly: GeneratedDirectRetrieve(typeof(global::Program),"Main")]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>))]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>),"age")]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>),"Inner")]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>.Inner))]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.IPlayer))]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.bbbirder))]
+[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.labbbider))]
+```
 对于Inherit的Attribute，会额外记录他们的子类。
 
+在运行时直接从全局元数据中获得`GeneratedDirectRetrieveAttribute`列表。
+## 目录结构
+大致目录如下：
+* `Editor` :自动安装功能
+* `Runtime` :运行时检索功能
+* `VSProj~` :RoslynAnalyzer的源码
 ## Todo List
 * ~~**支持 Inherit 参数**~~
 * 还可以继续优化，但是收益不大；欢迎PR。
     * `GeneratedDirectRetrieveAttribute` 中增加目标Attribute字段
     * `#NET7_0_OR_GREATER` 宏判断和成员排序
     * 增加 `GeneratedDirectRetrieveAttribute` 数组的起始元信息，实现遍历早停。
-    * 增量式检索（多帧异步）
 * ~~Auto CI~~
