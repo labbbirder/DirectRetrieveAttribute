@@ -12,8 +12,8 @@ namespace com.bbbirder.unityeditor{
     {
         const string SourceDllPath =
             "DirectAttributes/DirectAttribute.sg.dll";
-        // static Installer m_Instance;
-        // static Installer Instance => m_Instance ??= new();
+        static Installer m_Instance;
+        static Installer Instance => m_Instance ??= new();
 
         private Installer():base(SourceDllPath)
         {
@@ -21,9 +21,20 @@ namespace com.bbbirder.unityeditor{
         }
 
         [InitializeOnLoadMethod]
-        static void Install()
+        static void Setup()
         {
-            new Installer().RunWorkFlow();
+            bool isFocus = InternalEditorUtility.isApplicationActive;
+            EditorApplication.update += ()=>{
+                var cur = InternalEditorUtility.isApplicationActive;
+                if(!isFocus && cur)  OnEditorFocus();
+                isFocus = cur;
+            };
+
+            OnEditorFocus();
+        }
+        
+        static void OnEditorFocus(){
+            Instance.RunWorkFlow();
         }
     }
 }

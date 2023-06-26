@@ -22,13 +22,20 @@ namespace com.bbbirder.unityeditor{
         }
 
         public static string GetPackagePath([CallerFilePath]string csPath = null){
-            var pathSplit = csPath.Split('/','\\').ToList();
-            var packageIdx = pathSplit.LastIndexOf("Packages");
-            var targetIdx = -~packageIdx;
-            if(targetIdx == 0 || targetIdx >= pathSplit.Count ){
-                throw new($"file is not under a valid Packages folder:{csPath}");
+            var cwd = Path.GetFullPath(Environment.CurrentDirectory);
+            var cur = Path.GetFullPath(Path.GetDirectoryName(csPath));
+            
+            while(cur.StartsWith(cwd)){
+                if(File.Exists(Path.Join(cur,"package.json"))){
+                    return cur;
+                }
+                var tmp = Path.GetDirectoryName(cur);
+                if(tmp.Length==cur.Length){
+                    throw new($"unexpected parent path:{tmp}");
+                }
+                cur = tmp;
             }
-            return string.Join("/",pathSplit.Take(-~targetIdx));
+            throw new($"file is not under a valid Packages folder:{csPath}");
         }
         
         public static string GetPackageName([CallerFilePath]string csPath = null){

@@ -88,7 +88,7 @@ namespace com.bbbirder.unityeditor{
                 AssetDllPath+".meta",
             }, UnityPackagePath, ExportPackageOptions.Recurse);
             AssetDatabase.Refresh();
-            PackageLog(packageName,"package updated!");
+            PackageLog(packageName,"package updated!",packageVersion);
 
         }
         void InstallUnityPackage(){
@@ -96,7 +96,7 @@ namespace com.bbbirder.unityeditor{
             if(File.Exists(AssetDllPath)){
                 PackageUtils.UpdateFileDate(AssetDllPath);
             }
-            PackageLog(packageName,"plugin updated!");
+            PackageLog(packageName,"plugin updated!",packageVersion);
         }
         static void PackageLog(params object[] args){
             Debug.Log("[Roslyn Updater] "+string.Join("  ",args));

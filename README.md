@@ -1,10 +1,14 @@
 # DirectRetrieveAttribute
+[![openupm](https://img.shields.io/npm/v/com.labbbirder/DirectRetrieveAttribute?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.labbbirder/DirectRetrieveAttribute/)
+
 快速获取用户自定义Attribute；支持通过Attribute获取目标Type和目标MemberInfo。
 
-功能和优势：
+## 为什么有用
+使用额外的全局元数据而不是反射遍历来实现Attribute获取。
 
-* 近乎0开销检索所有特定Attribute
-* 近乎0开销检索所有特定子类或接口实现类
+可以满足以下需求：
+* 希望在运行时获取所有指定类型的Attribute，并且极低开销
+* 希望在运行时获取所有指定类型的子类，并且极低开销 (baseType & interface)
 * 通过Attribute实例直接获取标记的类或标记的成员
 
 
