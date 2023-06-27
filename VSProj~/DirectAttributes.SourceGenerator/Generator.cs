@@ -61,7 +61,7 @@ namespace DirectAttributes.SourceGenerator {
                     }
                 }
                 receiver?.Clear();
-                context.AddSource("assembly-attributes.g,cs", builder.ToString());
+                context.AddSource("assembly-attributes.g.cs", builder.ToString());
             }
             catch (Exception e) {
                 context.ReportDiagnostic(Diagnostic.Create(DiagnosticNotGenerated,
