@@ -6,7 +6,8 @@
   "hideInEditor": false,
   "subtree": "DirectRetrieveAttribute",
   "scripts": {
-    "tpush": "node ../../scripts/tpush.mjs"
+    "tpush": "node ../../scripts/tpush.mjs",
+    "tpull": "node ../../scripts/tpull.mjs"
   },
   "author": "bbbirder <502100554@qq.com>"
 }
