@@ -4,5 +4,9 @@
   "displayName": "Direct Attribute",
   "version": "0.0.12",
   "hideInEditor": false,
+  "subtree": "DirectRetrieveAttribute",
+  "scripts": {
+    "tpush": "node ../../scripts/tpush.mjs"
+  },
   "author": "bbbirder <502100554@qq.com>"
 }
