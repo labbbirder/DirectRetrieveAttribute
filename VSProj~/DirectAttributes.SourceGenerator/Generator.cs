@@ -23,7 +23,6 @@ namespace DirectAttributes.SourceGenerator {
             DiagGenerate.AnalyzerID, DiagGenerate.AnalyzerTitle, DiagGenerate.AnalyzerMessageFormat,
             "bbbirder", DiagnosticSeverity.Error, true);
         //readonly Type AttributeType = typeof(DirectRetrieveAttribute);
-        readonly AttributeReceiver receiver = new();
 
         public void Execute(GeneratorExecutionContext context) {
             //Debugger.Launch();
@@ -31,7 +30,8 @@ namespace DirectAttributes.SourceGenerator {
             if (!refs.Contains("com.bbbirder.directattribute")) return;
             try
             {
-                if (context.SyntaxReceiver is not AttributeReceiver)
+                var receiver = context.SyntaxReceiver as AttributeReceiver;
+                if (receiver is null)
                 {
                     return;
                 }
@@ -86,8 +86,7 @@ namespace DirectAttributes.SourceGenerator {
         }
 
         public void Initialize(GeneratorInitializationContext context) {
-            receiver?.Clear();
-            context.RegisterForSyntaxNotifications(() => receiver);
+            context.RegisterForSyntaxNotifications(() => new AttributeReceiver());
         }
 
     }
