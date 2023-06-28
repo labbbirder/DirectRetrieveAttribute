@@ -12,26 +12,46 @@ namespace DirectAttributes.SourceGenerator
 {
     internal class AttributeReceiver : ISyntaxReceiver
     {
-        public List<TypeDeclarationSyntax> TypeDeclarations { get; } = new();
+        public class Record
+        {
+            public TypeDeclarationSyntax TypeDeclaration;
+            public bool confirmed = false;
+            public void Deconstruct(out TypeDeclarationSyntax td,out bool cf)
+            {
+                td = TypeDeclaration;
+                cf = confirmed;
+            }
+        }
+        public List<Record> TypeDeclarations { get; } = new();
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
             if(syntaxNode is AttributeListSyntax)
             {
                 var t = syntaxNode.FirstAncestorOrSelf<TypeDeclarationSyntax>();
+                //Debugger.Launch();
                 if(t != null)
                 {
-                    Append(t);
+                    Append(t,true);
                 }
             }
             if (syntaxNode is TypeDeclarationSyntax td)
             {
-                Append(td);
+                Append(td,false);
             }
         }
-        void Append(TypeDeclarationSyntax td)
+        void Append(TypeDeclarationSyntax td, bool confirmed)
         {
-            if (TypeDeclarations.Any(d => d.IsEquivalentTo(td))) return;
-            TypeDeclarations.Add(td);
+            var pre = TypeDeclarations.FirstOrDefault(d => d.TypeDeclaration.IsEquivalentTo(td));
+            if(pre != null)
+            {
+                pre.confirmed |= confirmed;
+                return;
+            }
+            TypeDeclarations.Add(new()
+            {
+                confirmed= confirmed,
+                TypeDeclaration = td,
+            });
         }
         public void Clear() {
             TypeDeclarations.Clear();

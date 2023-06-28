@@ -3,6 +3,7 @@ using com.bbbirder;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using INT = System.Int16;
 [DirectRetrieve]
 class Program
@@ -35,7 +36,7 @@ class Program
             Console.WriteLine($"subtype: {t}");
         }
         Console.WriteLine(typeof(IPlayer).IsDefined(typeof(DirectRetrieveAttribute),false));
-        Console.WriteLine(typeof(labb));
+        Console.WriteLine(typeof(labbb));
 
         var genAttrs = typeof(Dog<,>).GetCustomAttributes();
         foreach(var attr in genAttrs) {
@@ -54,11 +55,10 @@ class Program
 }
 namespace com.Another{
     namespace ad.zxc {
-        [Foo]
         //[Inject("whoami")]
         internal class Player<G, TF> {
             [Inject("hello")]
-            int age;
+            int age3;
             void Salute() {
 
             }
@@ -81,10 +81,21 @@ namespace com.Another{
         }
         class Leo2 : IPlayer {
 
+            [StructLayout(LayoutKind.Explicit, Size = sizeof(int))]
+            private struct FloatIntBits
+            {
+                [FieldOffset(0)]
+                public float f;
+                [FieldOffset(0)]
+                public int i;
+            }
         }
-        class bbbirder : IPlayer { }
-        class labb : bbbirder { }
+
     }
+}
+//[Foo]
+class labbb:Leo2   {
+    //[Foo] int n;
 }
 class PlainAttribute : Attribute { }
 class FooAttribute : InjectAttribute

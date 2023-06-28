@@ -22,11 +22,10 @@ namespace DirectAttributes.SourceGenerator {
         readonly DiagnosticDescriptor DiagnosticNotGenerated = new(
             DiagGenerate.AnalyzerID, DiagGenerate.AnalyzerTitle, DiagGenerate.AnalyzerMessageFormat,
             "bbbirder", DiagnosticSeverity.Error, true);
-        readonly Type AttributeType = typeof(DirectRetrieveAttribute);
+        //readonly Type AttributeType = typeof(DirectRetrieveAttribute);
         readonly AttributeReceiver receiver = new();
 
         public void Execute(GeneratorExecutionContext context) {
-            //Debugger.Launch();
             try
             {
                 if (context.SyntaxReceiver is not AttributeReceiver)
@@ -34,28 +33,34 @@ namespace DirectAttributes.SourceGenerator {
                     return;
                 }
                 if (receiver.TypeDeclarations.Count == 0) return;
+                //Debugger.Launch();
                 var builder = new StringBuilder();
                 builder.AppendLine("using com.bbbirder;");
-                foreach(var td in receiver.TypeDeclarations)
+                foreach(var (td,confirmed) in receiver.TypeDeclarations)
                 {
                     var model = td.GetModel(context);
                     var targetType = model?.GetDeclaredSymbol(td);
                     var hasDirect = targetType.CheckDirectAttributeDeeply(out var attr);
-                    if (!hasDirect) continue;
-                    if (!targetType.IsGlobalAccessible(model))
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(
-                            DiagnosticNotAccessible,
-                            attr.ApplicationSyntaxReference.GetSyntax().GetLocation(),
-                            targetType.Name
-                        ));
-                        return;
-                    }
+                    if (!confirmed && !hasDirect) continue;
+                    var globalAccessible = targetType.IsGlobalAccessible(model);
                     var typeDisplay = targetType.GetDisplayStringWithoutTypeName();
-                    builder.AppendAttribute(typeDisplay);
+                    if (hasDirect)
+                    {
+                        if (!globalAccessible)
+                        {
+                            ReportNotAccessible(td.GetLocation(), targetType.Name);
+                            return;
+                        }
+                        builder.AppendAttribute(typeDisplay);
+                    }
                     foreach(var member in targetType.GetMembers())
                     {
                         if (!member.TryGetDirectAttribute(out var memAttr)) continue;
+                        if (!globalAccessible)
+                        {
+                            ReportNotAccessible(td.GetLocation(), targetType.Name);
+                            return;
+                        }
                         builder.AppendAttribute(typeDisplay, member.Name);
 
                     }
@@ -66,6 +71,14 @@ namespace DirectAttributes.SourceGenerator {
             catch (Exception e) {
                 context.ReportDiagnostic(Diagnostic.Create(DiagnosticNotGenerated,
                     null, e.Message + "\n" + e.StackTrace));
+            }
+            void ReportNotAccessible(Location loc,string typeName)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiagnosticNotAccessible,
+                    loc,
+                    typeName
+                ));
             }
         }
 
