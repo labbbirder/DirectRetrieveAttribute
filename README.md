@@ -18,7 +18,7 @@
 
 ### 安装
 ### via Git URL
-Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute
+Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute.git
 ### via OpenUPM
 ```bash
 openupm add com.bbbirder.directattribute
