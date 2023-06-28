@@ -26,6 +26,9 @@ namespace DirectAttributes.SourceGenerator {
         readonly AttributeReceiver receiver = new();
 
         public void Execute(GeneratorExecutionContext context) {
+            //Debugger.Launch();
+            var refs = context.Compilation.ReferencedAssemblyNames.Select(n => n.Name).ToArray();
+            if (!refs.Contains("com.bbbirder.directattribute")) return;
             try
             {
                 if (context.SyntaxReceiver is not AttributeReceiver)
@@ -66,7 +69,7 @@ namespace DirectAttributes.SourceGenerator {
                     }
                 }
                 receiver?.Clear();
-                context.AddSource("assembly-attributes.g.cs", builder.ToString());
+                context.AddSource(context.Compilation.AssemblyName+".assembly-attributes.g.cs", builder.ToString());
             }
             catch (Exception e) {
                 context.ReportDiagnostic(Diagnostic.Create(DiagnosticNotGenerated,

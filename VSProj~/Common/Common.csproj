@@ -5,4 +5,7 @@
 	<LangVersion>9.0</LangVersion>
   </PropertyGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\DirectAttributes.SourceGenerator\SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 </Project>
