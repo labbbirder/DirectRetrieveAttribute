@@ -10,7 +10,7 @@ using System.Xml.Linq;
 using com.bbbirder;
 using System.Diagnostics;
 
-namespace DirectAttributes.SourceGenerator
+namespace DirectAttribute.sg
 {
 
     public static class SymbolExtensions

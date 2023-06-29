@@ -3,16 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33403.182
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerator", "DirectAttributes.SourceGenerator\SourceGenerator.csproj", "{1DB9940F-579D-402B-9EB0-CE4ED83F7E87}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectAttribute.sg", "DirectAttribute.sg\DirectAttribute.sg.csproj", "{1DB9940F-579D-402B-9EB0-CE4ED83F7E87}"
 	ProjectSection(ProjectDependencies) = postProject
 		{67AA7D27-D1EF-45D5-AF12-5DF829E62E5C} = {67AA7D27-D1EF-45D5-AF12-5DF829E62E5C}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{67AA7D27-D1EF-45D5-AF12-5DF829E62E5C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp", "DirectAttributes.TestApp\TestApp.csproj", "{57585AE4-D16F-42F4-A83C-2B17646B28A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp", "TestApp\TestApp.csproj", "{57585AE4-D16F-42F4-A83C-2B17646B28A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark", "Benchmark\Benchmark.csproj", "{A45AA6DA-1035-4BAB-A82D-4CCF7446445D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "Benchmark\Benchmark.csproj", "{A45AA6DA-1035-4BAB-A82D-4CCF7446445D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

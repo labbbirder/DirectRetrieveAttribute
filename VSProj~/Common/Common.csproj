@@ -6,6 +6,6 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\DirectAttributes.SourceGenerator\SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<!--<ProjectReference Include="..\DirectAttributes.SourceGenerator\SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
 	</ItemGroup>
 </Project>

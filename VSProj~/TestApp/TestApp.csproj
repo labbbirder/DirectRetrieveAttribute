@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-	<ProjectReference Include="..\DirectAttributes.SourceGenerator\SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	<ProjectReference Include="..\DirectAttribute.sg\DirectAttribute.sg.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

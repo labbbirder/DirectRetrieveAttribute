@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace SourceGenerator.Diagnostics {
+namespace DirectAttribute.sg.Diagnostics {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace SourceGenerator.Diagnostics {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SourceGenerator.Diagnostics.NotAccessible", typeof(NotAccessible).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("DirectAttribute.sg.Diagnostics.NotAccessible", typeof(NotAccessible).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

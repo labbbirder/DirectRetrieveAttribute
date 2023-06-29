@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using INT = System.Int16;
 [DirectRetrieve]
-class Program
+partial class Program
 {
     static BindingFlags bindingFlags = 0
     | BindingFlags.Instance

@@ -10,10 +10,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using DiagAccessible = SourceGenerator.Diagnostics.NotAccessible;
-using DiagGenerate = SourceGenerator.Diagnostics.NotGenerated;
+using DiagAccessible = DirectAttribute.sg.Diagnostics.NotAccessible;
+using DiagGenerate = DirectAttribute.sg.Diagnostics.NotGenerated;
 
-namespace DirectAttributes.SourceGenerator {
+namespace DirectAttribute.sg {
     [Generator]
     public class Generator : ISourceGenerator {
         readonly DiagnosticDescriptor DiagnosticNotAccessible = new(

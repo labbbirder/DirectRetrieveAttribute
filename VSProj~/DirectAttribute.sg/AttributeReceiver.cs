@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace DirectAttributes.SourceGenerator
+namespace DirectAttribute.sg
 {
     internal class AttributeReceiver : ISyntaxReceiver
     {
