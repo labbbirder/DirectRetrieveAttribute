@@ -2,12 +2,7 @@
   "name": "com.bbbirder.directattribute",
   "description": "Retrieve Attribute directly on runtime, meanwhile, retrieve target Type or MemberInfo directly via a Attribute",
   "displayName": "Direct Attribute",
-  "version": "0.0.18",
+  "version": "0.0.20",
   "hideInEditor": false,
-  "subtree": "DirectRetrieveAttribute",
-  "scripts": {
-    "tpush": "node ../../scripts/tpush.mjs",
-    "tpull": "node ../../scripts/tpull.mjs"
-  },
   "author": "bbbirder <502100554@qq.com>"
 }
