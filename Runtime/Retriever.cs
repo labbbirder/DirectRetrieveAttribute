@@ -129,11 +129,20 @@ namespace com.bbbirder
             }
 #endif
             return assembly.GetCustomAttributes<GeneratedDirectRetrieveAttribute>()
-                .Where(a => a.type.IsSubclassOf(baseType))
+                .Where(a => IsBaseType(a.type,baseType))
                 .Select(a => a.type)
                 .Distinct()
                 .ToArray()
                 ;
+            static bool IsBaseType(Type subType,Type baseType){
+                if(subType==baseType) return false;
+                if(baseType.IsInterface){
+                    return baseType.IsAssignableFrom(subType);
+                }else{
+                    return subType.IsSubclassOf(baseType);
+                }
+            }
+
         }
         ///// <summary>
         ///// Retrieve all classes that implement the target interface
