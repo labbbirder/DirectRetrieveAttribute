@@ -16,6 +16,8 @@ using DiagGenerate = DirectAttribute.sg.Diagnostics.NotGenerated;
 namespace DirectAttribute.sg {
     [Generator]
     public class Generator : ISourceGenerator {
+        const string ValidAssemblyName = "com.bbbirder.directattribute";
+
         readonly DiagnosticDescriptor DiagnosticNotAccessible = new(
             DiagAccessible.AnalyzerID, DiagAccessible.AnalyzerTitle, DiagAccessible.AnalyzerMessageFormat,
             "bbbirder", DiagnosticSeverity.Error, true);
@@ -25,9 +27,8 @@ namespace DirectAttribute.sg {
         //readonly Type AttributeType = typeof(DirectRetrieveAttribute);
 
         public void Execute(GeneratorExecutionContext context) {
-            //Debugger.Launch();
             var refs = context.Compilation.ReferencedAssemblyNames.Select(n => n.Name).ToArray();
-            if (!refs.Contains("com.bbbirder.directattribute")) return;
+            if (!refs.Contains(ValidAssemblyName)) return;
             try
             {
                 var receiver = context.SyntaxReceiver as AttributeReceiver;
@@ -58,6 +59,7 @@ namespace DirectAttribute.sg {
                     }
                     foreach(var member in targetType.GetMembers())
                     {
+                        if (member is INamedTypeSymbol) continue;
                         if (!member.TryGetDirectAttribute(out var memAttr)) continue;
                         if (!globalAccessible)
                         {
