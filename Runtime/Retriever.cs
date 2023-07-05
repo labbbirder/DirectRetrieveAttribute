@@ -161,7 +161,7 @@ namespace com.bbbirder
         static T SetAttributeValue<T>(T attr, Type targetType, MemberInfo memberInfo) where T : DirectRetrieveAttribute
         {
             attr.targetType = targetType;
-            attr.memberInfo = memberInfo;
+            attr.targetMember = memberInfo;
             return attr;
         }
     }

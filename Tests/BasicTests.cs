@@ -15,7 +15,7 @@ public class BasicTests
     }
     static void AssertSubTypeCount<T>(int count)
     {
-        var sl = Retriever.GetAllSubtypes(typeof(BasicTests).Assembly,typeof(T));
+        var sl = Retriever.GetAllSubtypes(typeof(T), typeof(BasicTests).Assembly);
         Assert.AreEqual(count,sl.Length);
     }
     // A Test behaves as an ordinary method

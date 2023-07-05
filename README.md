@@ -48,14 +48,14 @@ class Player{
 //检索当前Domain下所有FooAttribute
 FooAttribute[] attributes = Retriever.GetAllAttributes<FooAttribute>(); 
 foreach(var attr in attributes){
-    print($"{attr.targetType} {attr.memberInfo?.Name} {attr.title}"); 
+    print($"{attr.targetType} {attr.targetMember?.Name} {attr.title}"); 
 }
 // output: 
 //    Player null whoami
 //    Player Salute Hello
 ```
 
-> 继承自`DirectRetrieveAttribute`的自定义Attribute可以通过`targetType`访问目标类型，通过`memberInfo`访问目标成员（可能为空）。但必须是通过`Retriever.GetAllAttributes<T>`返回的Attribute，`Retriever.GetAllAttributes<T>`会在检索过程中填充这两个property。
+> 继承自`DirectRetrieveAttribute`的自定义Attribute可以通过`targetType`访问目标类型，通过`targetMember`访问目标成员（可能为空）。但必须是通过`Retriever.GetAllAttributes<T>`返回的Attribute，`Retriever.GetAllAttributes<T>`会在检索过程中填充这两个property。
 
 
 
@@ -81,7 +81,7 @@ public class Titant:Hero{
 // 获取Domain下所有Battler子类
 Type[] types = Retriever.GetAllSubtypes(typeof(Battler));
 foreach(var type in types){
-    print($"type.Name");
+    print($"{type.Name}");
 }
 // output:
 //     Hero
