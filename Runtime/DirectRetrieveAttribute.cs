@@ -15,5 +15,12 @@ namespace com.bbbirder
         /// </summary>
         /// <value></value>
         public MemberInfo targetMember { get; internal set; }
+
+        /// <summary>
+        /// on receive target type and member
+        /// </summary>
+        public virtual void OnReceiveTarget(){
+
+        }
     }
 }

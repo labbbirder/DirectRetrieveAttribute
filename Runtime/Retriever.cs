@@ -162,6 +162,7 @@ namespace com.bbbirder
         {
             attr.targetType = targetType;
             attr.targetMember = memberInfo;
+            attr.OnReceiveTarget();
             return attr;
         }
     }
