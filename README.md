@@ -1,25 +1,24 @@
 # DirectRetrieveAttribute
-![GitHub last commit](https://img.shields.io/github/last-commit/labbbirder/directretrieveattribute)
-![GitHub package.json version](https://img.shields.io/github/package-json/v/labbbirder/directretrieveattribute)
-[![openupm](https://img.shields.io/npm/v/com.bbbirder.directattribute?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.bbbirder.directattribute/)
-
-快速获取用户自定义Attribute；支持通过Attribute获取目标Type和目标MemberInfo。
+![GitHub last commit](http://img.shields.io/github/last-commit/labbbirder/directretrieveattribute)
+![GitHub package.json version](http://img.shields.io/github/package-json/v/labbbirder/directretrieveattribute)
+[![openupm](http://img.shields.io/npm/v/com.bbbirder.directattribute?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.bbbirder.directattribute/)
 
 ## 为什么有用
 使用额外的全局元数据而不是反射遍历来实现Attribute获取。
 
-可以满足以下需求：
-* 希望在运行时获取所有指定类型的Attribute，并且极低开销
-* 希望在运行时获取所有指定类型的子类，并且极低开销 (baseType & interface)
-* 通过Attribute实例直接获取标记的类或标记的成员
+可以满足以下三大常见需求：
+* **高效**获取Attribute
+* **高效**获取子类（提供basetype）和实现类（提供interface）
+* 通过Attribute实例**直接获取**标记的类或成员
 
+参考 [基准测试结果](#基准测试结果)
 
 ## 快速开始
 
 ### 安装
-### via Git URL
+#### via Git URL
 Package Manager通过git url安装： https://github.com/labbbirder/DirectRetrieveAttribute.git
-### via OpenUPM
+#### via OpenUPM
 ```bash
 openupm add com.bbbirder.directattribute
 ```
@@ -33,6 +32,9 @@ class FooAttribute:DirectRetrieveAttribute {
     public string title { get; private set; }
     public FooAttribute(string title){
         this.title = title;
+    }
+    public override void OnReceiveTarget(){
+        // targetType is available here
     }
 }
 
@@ -55,7 +57,7 @@ foreach(var attr in attributes){
 //    Player Salute Hello
 ```
 
-> 继承自`DirectRetrieveAttribute`的自定义Attribute可以通过`targetType`访问目标类型，通过`targetMember`访问目标成员（可能为空）。但必须是通过`Retriever.GetAllAttributes<T>`返回的Attribute，`Retriever.GetAllAttributes<T>`会在检索过程中填充这两个property。
+> 自定义Attribute需要继承`DirectRetrieveAttribute`。`Retriever.GetAllAttributes`会在检索过程中赋值目标类型`targetType`和成员`targetMember`并调用`OnReceiveTarget()`通知赋值完成。
 
 
 
