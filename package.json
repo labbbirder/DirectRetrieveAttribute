@@ -1,6 +1,6 @@
 {
   "name": "com.bbbirder.directattribute",
-  "description": "Retrieve Attribute directly on runtime, meanwhile, retrieve target Type or MemberInfo directly via a Attribute",
+  "description": "Retrieve attributes and subtypes efficiently, meanwhile, retrieve target type and member directly from an attribute",
   "displayName": "Direct Attribute",
   "version": "1.0.5",
   "hideInEditor": false,
