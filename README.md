@@ -160,3 +160,9 @@ AppDomain.CurrentDomain.GetAssemblies()
     * `#NET7_0_OR_GREATER` 宏判断和成员排序
     * 增加 `GeneratedDirectRetrieveAttribute` 数组的起始元信息，实现遍历早停。
 * ~~Auto CI~~
+## 常见问题
+|Problem|Reason|Solution|
+|:-:|:-|:-|
+|打包后无法搜索到Attribute|Stripping Level 过高|降低Stripping Level或 [保留代码](https://docs.unity3d.com/Manual/ManagedCodeStripping.html)|
+
+NOTE THAT : 传统方式也可能遇到上面的问题。而本库的未来版本可以忽略上面的问题（即自动保留用到的Attribute），当前版本请自己注意代码剥离问题。
