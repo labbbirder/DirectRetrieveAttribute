@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using com.bbbirder;
+using UnityEngine;
 using AttributeGroup = System.Collections.Generic.Dictionary<
     System.Type,
     com.bbbirder.DirectRetrieveAttribute[]
@@ -22,21 +22,23 @@ namespace com.bbbirder
             | BindingFlags.DeclaredOnly
             ;
         static WeakHolder<AttributeGroup> m_attrLut;
-        static WeakHolder<AttributeGroup> attrLut => m_attrLut ??= new(() => {
-            var al = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => a.IsDefined(typeof(GeneratedDirectRetrieveAttribute),false))
-                .SelectMany(a => a.GetCustomAttributes<GeneratedDirectRetrieveAttribute>())
-                .Select(a => a.type)
-                .Distinct()
-                .ToArray();
+        static WeakHolder<AttributeGroup> attrLut => m_attrLut ??= new(() =>
+        {
+            // var al = AppDomain.CurrentDomain.GetAssemblies()
+            //     .Where(a => a.IsDefined(typeof(GeneratedDirectRetrieveAttribute),false))
+            //     .SelectMany(a => a.GetCustomAttributes<GeneratedDirectRetrieveAttribute>())
+            //     .Select(a => a.type)
+            //     .Distinct()
+            //     .ToArray();
             return AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => a.IsDefined(typeof(GeneratedDirectRetrieveAttribute)))
                 .SelectMany(a => GetAllAttributes<DirectRetrieveAttribute>(a))
-                .GroupBy(a => a.GetType()??typeof(object), a => a)
+                .GroupBy(a => a.GetType() ?? typeof(object), a => a)
                 .ToDictionary(e => e.Key, e => e.ToArray());
         });
         static WeakHolder<Type[]> m_typeSet;
-        static WeakHolder<Type[]> typeSet => m_typeSet ??= new(() => {
+        static WeakHolder<Type[]> typeSet => m_typeSet ??= new(() =>
+        {
             return AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => a.IsDefined(typeof(GeneratedDirectRetrieveAttribute), false))
                 .SelectMany(a => a.GetCustomAttributes<GeneratedDirectRetrieveAttribute>())
@@ -67,8 +69,8 @@ namespace com.bbbirder
             CheckAttribute(attributeType);
 #endif
             return attrLut.Value.ToArray()
-                .Where(a=> attributeType.IsAssignableFrom(a.Key))
-                .SelectMany(a=>a.Value)
+                .Where(a => attributeType.IsAssignableFrom(a.Key))
+                .SelectMany(a => a.Value)
                 .ToArray()
                 ;
         }
@@ -84,22 +86,28 @@ namespace com.bbbirder
             CheckAttribute(attributeType);
 #endif
             return assembly.GetCustomAttributes<GeneratedDirectRetrieveAttribute>()
-                .SelectMany(a => {
+                .SelectMany(a =>
+                {
                     var targetType = a.type;
+                    IEnumerable<DirectRetrieveAttribute> result;
                     if (a.HasMemberName)
                     {
-                        return targetType.GetMember(a.memberName, bindingFlags).SelectMany(
-                            m => m.GetCustomAttributes(attributeType,false).Select(
+                        result = targetType.GetMember(a.memberName, bindingFlags).SelectMany(
+                            m => m.GetCustomAttributes(attributeType, false).Select(
                                 ca => SetAttributeValue(ca as DirectRetrieveAttribute, targetType, m)
                             )
                         );
                     }
                     else
                     {
-                        return targetType.GetCustomAttributes(attributeType,false).Select(
+                        result = targetType.GetCustomAttributes(attributeType, false).Select(
                             ca => SetAttributeValue(ca as DirectRetrieveAttribute, targetType, null)
                         );
                     }
+                    if(result.Count()==0){
+                        throw new("cannot find attribute but the assembly metadata preset, please check your script-strip setting");
+                    }
+                    return result;
                 })
                 .ToArray();
         }
@@ -114,22 +122,19 @@ namespace com.bbbirder
         {
             var attrType = typeof(T);
             return assembly.GetCustomAttributes<GeneratedDirectRetrieveAttribute>()
-                .SelectMany(a => {
+                .SelectMany(a =>
+                {
                     var targetType = a.type;
                     if (a.HasMemberName)
-                    {
                         return targetType.GetMember(a.memberName, bindingFlags).SelectMany(
                             m => m.GetCustomAttributes<T>(false).Select(
                                 ca => SetAttributeValue(ca, targetType, m)
                             )
                         );
-                    }
                     else
-                    {
                         return targetType.GetCustomAttributes<T>(false).Select(
                             ca => SetAttributeValue(ca, targetType, null)
                         );
-                    }
                 })
                 .ToArray();
         }
@@ -146,7 +151,7 @@ namespace com.bbbirder
             CheckBasetype(baseType);
 #endif
             return typeSet.Value
-                .Where(a=>a!=baseType && baseType.IsAssignableFrom(a))
+                .Where(a => a != baseType && baseType.IsAssignableFrom(a))
                 .ToArray()
                 ;
         }
@@ -167,8 +172,9 @@ namespace com.bbbirder
         /// <param name="assembly"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static Type[] GetAllSubtypes<T>(Assembly assembly){
-            return GetAllSubtypes(typeof(T),assembly);
+        public static Type[] GetAllSubtypes<T>(Assembly assembly)
+        {
+            return GetAllSubtypes(typeof(T), assembly);
         }
 
         /// <summary>
@@ -183,30 +189,36 @@ namespace com.bbbirder
             CheckBasetype(baseType);
 #endif
             return assembly.GetCustomAttributes<GeneratedDirectRetrieveAttribute>()
-                .Where(a => IsBaseType(a.type,baseType))
+                .Where(a => IsBaseType(a.type, baseType))
                 .Select(a => a.type)
                 .Distinct()
                 .ToArray()
                 ;
-            static bool IsBaseType(Type subType,Type baseType){
-                if(subType==baseType) return false;
-                if(baseType.IsInterface){
+            
+            static bool IsBaseType(Type subType, Type baseType)
+            {
+                if (subType == baseType) 
+                    return false;
+
+                if (baseType.IsInterface)
                     return baseType.IsAssignableFrom(subType);
-                }else{
+                else
                     return subType.IsSubclassOf(baseType);
-                }
             }
 
         }
 
 
-        static void CheckAttribute(Type attributeType){
+        static void CheckAttribute(Type attributeType)
+        {
             if (!typeof(DirectRetrieveAttribute).IsAssignableFrom(attributeType))
             {
                 throw new($"type {attributeType} is not a DirectRetrieveAttribute");
             }
         }
-        static void CheckBasetype(Type baseType){
+
+        static void CheckBasetype(Type baseType)
+        {
             var attributesOnBase = baseType.GetCustomAttributes(true)
                 .OfType<DirectRetrieveAttribute>()
                 .ToArray();
