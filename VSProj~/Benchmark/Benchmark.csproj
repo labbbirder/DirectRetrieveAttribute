@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\Common\com.bbbirder.directattribute.csproj" />
   </ItemGroup>
 
 </Project>
