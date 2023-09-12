@@ -105,7 +105,8 @@ namespace com.bbbirder
                             ca => SetAttributeValue(ca as DirectRetrieveAttribute, targetType, null)
                         );
                     }
-                    if(result.Count()==0){
+                    if (result.Count() == 0)
+                    {
                         throw new("cannot find attribute but the assembly metadata preset, please check your script-strip setting");
                     }
                     return result;
@@ -151,10 +152,30 @@ namespace com.bbbirder
 #if DEBUG
             CheckBasetype(baseType);
 #endif
-            return typeSet.Value
-                .Where(a => a != baseType && baseType.IsAssignableFrom(a))
-                .ToArray()
-                ;
+            if (baseType.IsGenericTypeDefinition)
+            {
+                return typeSet.Value
+                    .Where(a => a != baseType)
+                    .Where(a => GetTypesTowardsBase(a).Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType)
+                     || a.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType))
+                    .ToArray()
+                    ;
+            }
+            else
+            {
+                return typeSet.Value
+                    .Where(a => a != baseType && baseType.IsAssignableFrom(a))
+                    .ToArray()
+                    ;
+            }
+            static IEnumerable<Type> GetTypesTowardsBase(Type type)
+            {
+                while (type != null)
+                {
+                    yield return type;
+                    type = type.BaseType;
+                }
+            }
         }
 
         /// <summary>
@@ -195,10 +216,10 @@ namespace com.bbbirder
                 .Distinct()
                 .ToArray()
                 ;
-            
+
             static bool IsBaseType(Type subType, Type baseType)
             {
-                if (subType == baseType) 
+                if (subType == baseType)
                     return false;
 
                 if (baseType.IsInterface)
