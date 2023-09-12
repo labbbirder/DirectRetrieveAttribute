@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -217,6 +218,7 @@ namespace com.bbbirder
             }
         }
 
+        [Conditional("DIRECT_RETRIEVE_ATTRIBUTE_STRICT")]
         static void CheckBasetype(Type baseType)
         {
             var attributesOnBase = baseType.GetCustomAttributes(true)
