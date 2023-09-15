@@ -71,8 +71,7 @@ namespace innerA.innerB{
     }
 }
 namespace bt_it{
-    [InheritRetrieve]
-    class MyBaseType{
+    class MyBaseType:IDirectRetrieve{
         
     }
     class SubA<T>:MyBaseType{
@@ -83,8 +82,7 @@ namespace bt_it{
     class SubD:SubB{}
 
     
-    [InheritRetrieve]
-    interface IMyInterface{
+    interface IMyInterface:IDirectRetrieve{
         
     }
     class ImpA<T>:IMyInterface{

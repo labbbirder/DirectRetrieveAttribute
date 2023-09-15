@@ -34,7 +34,7 @@ namespace DirectAttribute.sg.NotAccessible
             if (node is null) return;
             var attributeSymbol = model.GetSymbolInfo(node).Symbol.ContainingType;
             if (attributeSymbol is null) return;
-            if (!attributeSymbol.IsAttribute(typeof(DirectRetrieveAttribute))) return;
+            if (!attributeSymbol.IsSameTypeName(typeof(DirectRetrieveAttribute))) return;
             var targetTypeDeclaration = node.FirstAncestorOrSelf<TypeDeclarationSyntax>();
             var accessible = targetTypeDeclaration.IsGlobalAccessible(model);
             if (!accessible)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +17,7 @@ using DiagGenerate = DirectAttribute.sg.Diagnostics.NotGenerated;
 namespace DirectAttribute.sg {
     [Generator]
     public class Generator : ISourceGenerator {
-        const string ValidAssemblyName = "com.bbbirder.directattribute";
+        const string ValidAssemblyName = "com.bbbirder.directattribute.dll";
 
         readonly DiagnosticDescriptor DiagnosticNotAccessible = new(
             DiagAccessible.AnalyzerID, DiagAccessible.AnalyzerTitle, DiagAccessible.AnalyzerMessageFormat,
@@ -26,9 +27,10 @@ namespace DirectAttribute.sg {
             "bbbirder", DiagnosticSeverity.Error, true);
         //readonly Type AttributeType = typeof(DirectRetrieveAttribute);
 
+
         public void Execute(GeneratorExecutionContext context) {
-            var refs = context.Compilation.ReferencedAssemblyNames.Select(n => n.Name).ToArray();
-            if (!refs.Contains(ValidAssemblyName)) return;
+            //var contRef = context.Compilation.References.Select(r=>r.Display).Any(n=>n.StartsWith(ValidAssemblyName));
+            //if (!contRef) return;
             try
             {
                 var receiver = context.SyntaxReceiver as AttributeReceiver;
@@ -44,7 +46,12 @@ namespace DirectAttribute.sg {
                 {
                     var model = td.GetModel(context);
                     var targetType = model?.GetDeclaredSymbol(td);
-                    var hasDirect = targetType.CheckDirectAttributeDeeply(out var attr);
+                    var interfaces = targetType.AllInterfaces;
+                    foreach(var interf in interfaces)
+                    {
+                        var attrs = interf.GetAttributes().ToArray();
+                    }
+                    var hasDirect = targetType.CheckDirectAttributeDeeply();
                     if (!confirmed && !hasDirect) continue;
                     var globalAccessible = targetType.IsGlobalAccessible(model);
                     var typeDisplay = targetType.GetDisplayStringWithoutTypeName();
@@ -60,7 +67,7 @@ namespace DirectAttribute.sg {
                     foreach(var member in targetType.GetMembers())
                     {
                         if (member is INamedTypeSymbol) continue;
-                        if (!member.TryGetDirectAttribute(out var memAttr)) continue;
+                        if (!member.HasDirectAttribute()) continue;
                         if (!globalAccessible)
                         {
                             ReportNotAccessible(td.GetLocation(), targetType.Name);

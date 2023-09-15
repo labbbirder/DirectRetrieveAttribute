@@ -20,6 +20,7 @@ namespace DirectAttribute.sg
             public INamedTypeSymbol targetType;
             public string memberName;
         }
+
         public static bool IsGlobalAccessible(this TypeDeclarationSyntax syntax, SemanticModel model)
         {
             var targetTypeSymbol = model.GetDeclaredSymbol(syntax);
@@ -37,6 +38,7 @@ namespace DirectAttribute.sg
             var accessible = model.IsAccessible(position, symbol);
             return accessible;
         }
+
         //public static RetrieveAttributeData ParseDirectAttribute(this AttributeData attr)
         //{
         //    var args = attr.ConstructorArguments;
@@ -55,29 +57,26 @@ namespace DirectAttribute.sg
         //        return null;
         //    }
         //}
-        public static bool TryGetDirectAttribute(this ISymbol symbol, out AttributeData attr, bool checkIsInherit = false)
+        public static bool HasDirectAttribute(this ISymbol symbol)
         {
-            attr = default;
             var attributes = symbol?.GetAttributes();
             if (attributes == null) return false;
 
-            attr = attributes.Value.FirstOrDefault(a =>
+            return attributes.Value.Any(a =>
             {
-                if (checkIsInherit)
-                {
-                    var isInherit = a.GetInherit();
-                    return isInherit && a.AttributeClass.IsInheritAttribute(typeof(DirectRetrieveAttribute));
-                }
-                else
-                {
-                    return a.AttributeClass.IsInheritAttribute(typeof(DirectRetrieveAttribute));
-                }
+                    return a.AttributeClass.IsTypeOrSubtype(typeof(DirectRetrieveAttribute));
             });
-            return attr != null;
         }
-        public static bool IsInheritAttribute(this INamedTypeSymbol symbol, Type attributeType)
+
+        /// <summary>
+        /// Whether the symbol is a target type. Check basetype only.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="basetype"></param>
+        /// <returns></returns>
+        public static bool IsTypeOrSubtype(this INamedTypeSymbol symbol, Type basetype)
         {
-            if (symbol.IsAttribute(attributeType))
+            if (symbol.IsSameTypeName(basetype))
             {
                 return true;
             }
@@ -85,7 +84,7 @@ namespace DirectAttribute.sg
             {
                 return false;
             }
-            return symbol.BaseType.IsInheritAttribute(attributeType);
+            return symbol.BaseType.IsSameTypeName(basetype);
         }
         public static SemanticModel GetModel(this SyntaxNode node, GeneratorExecutionContext context)
         {
@@ -93,22 +92,27 @@ namespace DirectAttribute.sg
             if (!context.Compilation.ContainsSyntaxTree(tree)) return null;
             return context.Compilation.GetSemanticModel(tree);
         }
-        public static string GetDisplayStringWithoutTypeName(this INamedTypeSymbol symbol) {
+        public static string GetDisplayStringWithoutTypeName(this INamedTypeSymbol symbol)
+        {
             var builder = new StringBuilder();
-            if(symbol.ContainingNamespace.IsGlobalNamespace) {
+            if (symbol.ContainingNamespace.IsGlobalNamespace)
+            {
                 builder.Append("global::");
             }
-            else {
+            else
+            {
                 builder.Append(symbol.ContainingNamespace.ToString());
                 builder.Append(".");
             }
             AppendNestType(symbol, true);
             return builder.ToString();
-            void AppendNestType(INamedTypeSymbol nestType, bool isTail = false) {
+            void AppendNestType(INamedTypeSymbol nestType, bool isTail = false)
+            {
                 if (nestType == null) return;
                 AppendNestType(nestType.ContainingType);
                 builder.Append(nestType.Name);
-                if(nestType.IsGenericType && nestType.TypeParameters.Length > 0) {
+                if (nestType.IsGenericType && nestType.TypeParameters.Length > 0)
+                {
                     var commaCount = nestType.TypeParameters.Length - 1;
                     builder.Append('<');
                     builder.Append(',', commaCount);
@@ -127,71 +131,75 @@ namespace DirectAttribute.sg
             return symbol.GetAttributes()
                 .FirstOrDefault(_ => _.AttributeClass?.ToDisplayString() == atrributeName);
         }
-        public static bool GetInherit(this AttributeData attr)
+        //public static bool GetInherit(this AttributeData attr)
+        //{
+        //    return attr?.AttributeClass != null && attr.AttributeClass.GetAttributeNamedArgument("Inherited");
+        //}
+        //public static bool GetAllowMultiple(this AttributeData attr)
+        //{
+        //    return attr.AttributeClass.GetAttributeNamedArgument("AllowMultiple");
+        //}
+        //static bool GetAttributeNamedArgument(this INamedTypeSymbol attrClass, string argumentName, bool omitValue = false)
+        //{
+        //    var attrs = attrClass.GetAttributes();
+        //    var usage = attrClass.FindAttribute("System.AttributeUsageAttribute");
+        //    if (usage != null)
+        //    {
+        //        var arg = usage.NamedArguments.FirstOrDefault(arg => arg.Key == argumentName);
+        //        if (arg.Key != argumentName) return omitValue;
+        //        return (bool)arg.Value.Value;
+        //    }
+        //    if (attrClass.BaseType != null)
+        //    {
+        //        return attrClass.BaseType.GetAttributeNamedArgument(argumentName);
+        //    }
+        //    return omitValue;
+        //}
+        public static bool CheckDirectAttributeDeeply(this ISymbol symbol)
         {
-            return attr?.AttributeClass!=null && attr.AttributeClass.GetAttributeNamedArgument("Inherited");
-        }
-        public static bool GetAllowMultiple(this AttributeData attr)
-        {
-            return attr.AttributeClass.GetAttributeNamedArgument("AllowMultiple");
-        }
-        static bool GetAttributeNamedArgument(this INamedTypeSymbol attrClass, string argumentName, bool omitValue = false)
-        {
-            var usage = attrClass.FindAttribute("System.AttributeUsageAttribute");
-            if (usage != null)
-            {
-                var arg = usage.NamedArguments.FirstOrDefault(arg=>arg.Key==argumentName);
-                if (arg.Key!=argumentName) return omitValue;
-                return (bool)arg.Value.Value;
-            }
-            if (attrClass.BaseType!=null)
-            {
-                return attrClass.BaseType.GetAttributeNamedArgument(argumentName);
-            }
-            return omitValue;
-        }
-        public static bool CheckDirectAttributeDeeply(this ISymbol symbol,out AttributeData attr)
-        {
-            attr = default;
-            if (!(symbol is INamedTypeSymbol typeSymbol)) return false ;
-            if(symbol.TryGetDirectAttribute(out attr))
+            if (!(symbol is INamedTypeSymbol typeSymbol)) return false;
+            if (symbol.HasDirectAttribute())
             {
                 return true;
             }
-            AttributeData temp = null ;
-            if(typeSymbol.AllInterfaces.Any(i=>i.TryGetDirectAttribute(out temp,true)))
+            if (typeSymbol.AllInterfaces.Any(i => i.IsTypeOrSubtype(typeof(IDirectRetrieve))))
             {
-                attr = temp;
                 return true;
             }
-            return typeSymbol.CheckDirectAttributeOnBaseType(out attr);
+            return typeSymbol.CheckDirectAttributeOnBaseType();
         }
-        static bool CheckDirectAttributeOnBaseType(this INamedTypeSymbol symbol,out AttributeData attr)
+        static bool CheckDirectAttributeOnBaseType(this INamedTypeSymbol symbol)
         {
             if (symbol.BaseType != null)
             {
-                if (symbol.BaseType.TryGetDirectAttribute(out attr, true))
+                if (symbol.BaseType.HasDirectAttribute())
                 {
                     return true;
                 }
-                return symbol.BaseType.CheckDirectAttributeOnBaseType(out attr);
+                return symbol.BaseType.CheckDirectAttributeOnBaseType();
             }
-            attr = default;
             return false;
         }
-        public static bool IsAttribute(this ISymbol symbol,Type attributeType)
+
+        /// <summary>
+        /// Whether the types have the same namespace and name
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <param name="anotherType"></param>
+        /// <returns></returns>
+        public static bool IsSameTypeName(this ISymbol symbol, Type anotherType)
         {
             bool sameNamespace;
-            if (string.IsNullOrEmpty(attributeType.Namespace) && string.IsNullOrEmpty(symbol.ContainingNamespace.ToDisplayString()))
+            if (string.IsNullOrEmpty(anotherType.Namespace) && string.IsNullOrEmpty(symbol.ContainingNamespace.ToDisplayString()))
             {
                 sameNamespace = true;
             }
             else
             {
-                sameNamespace = symbol.ContainingNamespace.ToDisplayString() == attributeType.Namespace;
+                sameNamespace = symbol.ContainingNamespace.ToDisplayString() == anotherType.Namespace;
             }
 
-            return symbol.Name == attributeType.Name
+            return symbol.Name == anotherType.Name
                 && sameNamespace;
         }
         public static bool IsDerivedFromType(this INamedTypeSymbol symbol, string typeName)

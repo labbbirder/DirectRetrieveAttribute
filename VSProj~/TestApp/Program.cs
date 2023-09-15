@@ -1,6 +1,5 @@
 ﻿using com.Another.ad.zxc;
 using com.bbbirder;
-using OtherModule;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -19,15 +18,15 @@ partial class Program
     [Inject("good")]
     public static void Main()
     {
-        foreach(var t in Retriever.GetAllSubtypes(typeof(IOther)))
-        {
-            Console.WriteLine($"other: {t}");
-        }
+        //foreach(var t in Retriever.GetAllSubtypes(typeof(IOther)))
+        //{
+        //    Console.WriteLine($"other: {t}");
+        //}
 
         var attrs = Retriever.GetAllAttributes<InjectAttribute>();
         foreach(var attr in attrs)
         {
-            Console.WriteLine($"{attr.targetType} {attr.memberInfo} {attr.name}");
+            Console.WriteLine($"{attr.targetType} {attr.targetMember} {attr.name}");
         }
         Console.WriteLine(attrs.Length);
         Console.WriteLine(typeof(Program).Assembly.GetTypes()

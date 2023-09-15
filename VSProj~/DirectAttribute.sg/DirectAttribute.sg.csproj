@@ -16,13 +16,15 @@
     <Deterministic>False</Deterministic>
   </PropertyGroup>
 
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
   </ItemGroup>
 
   <!--直接引用项目工程有些bug-->
   <ItemGroup>
-    <Compile Include="../Common/AttributeList.cs" Link="Attributes\DirectAttribute.cs" />
+	  <Compile Include="../../Runtime/DirectRetrieveAttribute.cs" Link="SharedSymbols\DirectAttribute.cs" />
+	  <Compile Include="../../Runtime/IDirectRetrieve.cs" Link="SharedSymbols\IDirectRetrieve.cs" />
   </ItemGroup>
 	
   <ItemGroup>
@@ -47,10 +49,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>NotGenerated.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Attributes\" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
