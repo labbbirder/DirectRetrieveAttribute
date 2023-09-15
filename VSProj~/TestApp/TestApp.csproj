@@ -10,7 +10,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Common\com.bbbirder.directattribute.csproj" />
 	<ProjectReference Include="..\DirectAttribute.sg\DirectAttribute.sg.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-	<ProjectReference Include="..\OtherModule\OtherModule.csproj" />
   </ItemGroup>
 
 </Project>
