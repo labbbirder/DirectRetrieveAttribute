@@ -17,7 +17,7 @@ using DiagGenerate = DirectAttribute.sg.Diagnostics.NotGenerated;
 namespace DirectAttribute.sg {
     [Generator]
     public class Generator : ISourceGenerator {
-        const string ValidAssemblyName = "com.bbbirder.directattribute.dll";
+        const string ValidAssemblyName = "com.bbbirder.directattribute";
 
         readonly DiagnosticDescriptor DiagnosticNotAccessible = new(
             DiagAccessible.AnalyzerID, DiagAccessible.AnalyzerTitle, DiagAccessible.AnalyzerMessageFormat,
@@ -25,12 +25,9 @@ namespace DirectAttribute.sg {
         readonly DiagnosticDescriptor DiagnosticNotGenerated = new(
             DiagGenerate.AnalyzerID, DiagGenerate.AnalyzerTitle, DiagGenerate.AnalyzerMessageFormat,
             "bbbirder", DiagnosticSeverity.Error, true);
-        //readonly Type AttributeType = typeof(DirectRetrieveAttribute);
-
 
         public void Execute(GeneratorExecutionContext context) {
-            //var contRef = context.Compilation.References.Select(r=>r.Display).Any(n=>n.StartsWith(ValidAssemblyName));
-            //if (!contRef) return;
+            var containsValidReference = context.Compilation.ReferencedAssemblyNames.Any(n => n.Name.Equals(ValidAssemblyName));
             try
             {
                 var receiver = context.SyntaxReceiver as AttributeReceiver;
@@ -62,7 +59,15 @@ namespace DirectAttribute.sg {
                             ReportNotAccessible(td.GetLocation(), targetType.Name);
                             return;
                         }
-                        builder.AppendAttribute(typeDisplay);
+                        if (!containsValidReference)
+                        {
+                            builder.AppendLine($"#error cannot create extra direct attribute metadata," +
+                                $" please add a reference to {ValidAssemblyName} for assembly: {context.Compilation.AssemblyName}");
+                        }
+                        else
+                        {
+                            builder.AppendAttribute(typeDisplay);
+                        }
                     }
                     foreach(var member in targetType.GetMembers())
                     {
@@ -73,7 +78,15 @@ namespace DirectAttribute.sg {
                             ReportNotAccessible(td.GetLocation(), targetType.Name);
                             return;
                         }
-                        builder.AppendAttribute(typeDisplay, member.Name);
+                        if (!containsValidReference)
+                        {
+                            builder.AppendLine($"#error cannot create extra direct attribute metadata," +
+                                $" please add a reference to {ValidAssemblyName} for assembly: {context.Compilation.AssemblyName}");
+                        }
+                        else
+                        {
+                            builder.AppendAttribute(typeDisplay, member.Name);
+                        }
 
                     }
                 }
