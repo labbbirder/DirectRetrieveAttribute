@@ -84,7 +84,7 @@ namespace DirectAttribute.sg
             {
                 return false;
             }
-            return symbol.BaseType.IsSameTypeName(basetype);
+            return IsTypeOrSubtype(symbol.BaseType, basetype);
         }
         public static SemanticModel GetModel(this SyntaxNode node, GeneratorExecutionContext context)
         {
