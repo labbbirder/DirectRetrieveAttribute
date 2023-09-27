@@ -217,16 +217,6 @@ namespace com.bbbirder
                 .ToArray()
                 ;
 
-            static bool IsBaseType(Type subType, Type baseType)
-            {
-                if (subType == baseType)
-                    return false;
-
-                if (baseType.IsInterface)
-                    return baseType.IsAssignableFrom(subType);
-                else
-                    return subType.IsSubclassOf(baseType);
-            }
 
         }
 
@@ -239,37 +229,29 @@ namespace com.bbbirder
             }
         }
 
-        [Conditional("DIRECT_RETRIEVE_ATTRIBUTE_STRICT")]
+        // [Conditional("DIRECT_RETRIEVE_ATTRIBUTE_STRICT")]
         static void CheckBasetype(Type baseType)
         {
-            var attributesOnBase = baseType.GetCustomAttributes(true)
-                .OfType<DirectRetrieveAttribute>()
-                .ToArray();
-            if (attributesOnBase.Length == 0)
+            if (!IsTypeRetrievable(baseType))
             {
-                throw new($"there is no DirectRetrieveAttribute on type {baseType}");
-            }
-            var hasInherit = attributesOnBase
-                .Select(a => a.GetType().GetCustomAttribute<AttributeUsageAttribute>())
-                .Any(usage => usage.Inherited);
-            if (!hasInherit)
-            {
-                throw new($"DirectRetrieveAttribute on {baseType} should be Inherited");
+                throw new($"type {baseType} is not retrievable, which should inherit from IDirectRetrieve");
             }
         }
-        ///// <summary>
-        ///// Retrieve all classes that implement the target interface
-        ///// </summary>
-        ///// <param name="assembly"></param>
-        ///// <param name="interfaceType"></param>
-        ///// <returns></returns>
-        //public static Type[] GetAllImplements(Assembly assembly,Type interfaceType){
-        //    if (!interfaceType.IsInterface)
-        //    {
-        //        throw new($"type {interfaceType} is not interface");
-        //    }
-        //    return GetAllSubtypes(assembly, interfaceType);
-        //}
+        
+        public static bool IsTypeRetrievable(Type type){
+            return IsBaseType(type,typeof(IDirectRetrieve));
+        }
+
+        static bool IsBaseType(Type subType, Type baseType)
+        {
+            if (subType == baseType)
+                return false;
+
+            if (baseType.IsInterface)
+                return baseType.IsAssignableFrom(subType);
+            else
+                return subType.IsSubclassOf(baseType);
+        }
 
         static T SetAttributeValue<T>(T attr, Type targetType, MemberInfo memberInfo) where T : DirectRetrieveAttribute
         {
