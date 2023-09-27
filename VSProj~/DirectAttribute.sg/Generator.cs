@@ -28,6 +28,7 @@ namespace DirectAttribute.sg {
 
         public void Execute(GeneratorExecutionContext context) {
             var containsValidReference = context.Compilation.ReferencedAssemblyNames.Any(n => n.Name.Equals(ValidAssemblyName));
+            if (!containsValidReference) return;
             try
             {
                 var receiver = context.SyntaxReceiver as AttributeReceiver;
