@@ -39,7 +39,6 @@ namespace DirectAttribute.sg {
                 if (receiver.TypeDeclarations.Count == 0) return;
                 //Debugger.Launch();
                 var builder = new StringBuilder();
-                builder.AppendLine("using com.bbbirder;");
                 foreach(var (td,confirmed) in receiver.TypeDeclarations)
                 {
                     var model = td.GetModel(context);
@@ -92,6 +91,8 @@ namespace DirectAttribute.sg {
                     }
                 }
                 receiver?.Clear();
+                if (builder.Length == 0) return;
+                builder.Insert(0, "using com.bbbirder;");
                 context.AddSource(context.Compilation.AssemblyName+".assembly-attributes.g.cs", builder.ToString());
             }
             catch (Exception e) {
