@@ -47,6 +47,15 @@ partial class Program
             Console.WriteLine($"ga: {attr}");
         }
     }
+    public enum MyEnum
+    {
+        [Inject("Enum One")]
+        One,
+        [Inject("Enum 2")]
+        Two,
+        [Inject("Enum 3")]
+        Tytt,
+    }
     internal class Foo
     {
         //[DirectRetrieve(typeof(Program))]

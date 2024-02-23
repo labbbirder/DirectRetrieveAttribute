@@ -14,9 +14,9 @@ namespace DirectAttribute.sg
     {
         public class Record
         {
-            public TypeDeclarationSyntax TypeDeclaration;
+            public BaseTypeDeclarationSyntax TypeDeclaration;
             public bool confirmed = false;
-            public void Deconstruct(out TypeDeclarationSyntax td,out bool cf)
+            public void Deconstruct(out BaseTypeDeclarationSyntax td,out bool cf)
             {
                 td = TypeDeclaration;
                 cf = confirmed;
@@ -27,9 +27,9 @@ namespace DirectAttribute.sg
         {
             if(syntaxNode is AttributeListSyntax)
             {
-                var t = syntaxNode.FirstAncestorOrSelf<TypeDeclarationSyntax>();
-                //Debugger.Launch();
-                if(t != null)
+                var t = syntaxNode.FirstAncestorOrSelf<BaseTypeDeclarationSyntax>();
+                // Debugger.Launch();
+                if (t != null)
                 {
                     Append(t,true);
                 }
@@ -39,7 +39,7 @@ namespace DirectAttribute.sg
                 Append(td,false);
             }
         }
-        void Append(TypeDeclarationSyntax td, bool confirmed)
+        void Append(BaseTypeDeclarationSyntax td, bool confirmed)
         {
             var pre = TypeDeclarations.FirstOrDefault(d => d.TypeDeclaration.IsEquivalentTo(td));
             if(pre != null)

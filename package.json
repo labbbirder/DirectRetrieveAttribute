@@ -2,7 +2,7 @@
   "name": "com.bbbirder.directattribute",
   "description": "Retrieve attributes and subtypes efficiently, meanwhile, retrieve target type and member directly from an attribute",
   "displayName": "Direct Attribute",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "hideInEditor": false,
   "author": "bbbirder <502100554@qq.com>"
 }
