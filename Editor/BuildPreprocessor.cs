@@ -7,13 +7,12 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
-using UnityEngine.Assertions;
 namespace com.bbbirder.unityeditor
 {
     class BuildPreprocessor : IPreprocessBuildWithReport
     {
         public int callbackOrder => 0;
-        
+
         public void OnPreprocessBuild(BuildReport report)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies()

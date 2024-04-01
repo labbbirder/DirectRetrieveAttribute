@@ -94,15 +94,15 @@ namespace com.bbbirder
                     if (a.HasMemberName)
                     {
                         result = targetType.GetMember(a.memberName, bindingFlags).SelectMany(
-                            m => m.GetCustomAttributes(attributeType, false).Select(
-                                ca => SetAttributeValue(ca as DirectRetrieveAttribute, targetType, m)
+                            member => member.GetCustomAttributes(attributeType, false).Select(
+                                ca => SetAttributeValue(ca as DirectRetrieveAttribute, member)
                             )
                         );
                     }
                     else
                     {
                         result = targetType.GetCustomAttributes(attributeType, false).Select(
-                            ca => SetAttributeValue(ca as DirectRetrieveAttribute, targetType, null)
+                            ca => SetAttributeValue(ca as DirectRetrieveAttribute, targetType)
                         );
                     }
                     if (result.Count() == 0)
@@ -129,13 +129,13 @@ namespace com.bbbirder
                     var targetType = a.type;
                     if (a.HasMemberName)
                         return targetType.GetMember(a.memberName, bindingFlags).SelectMany(
-                            m => m.GetCustomAttributes<T>(false).Select(
-                                ca => SetAttributeValue(ca, targetType, m)
+                            member => member.GetCustomAttributes<T>(false).Select(
+                                ca => SetAttributeValue(ca, member)
                             )
                         );
                     else
                         return targetType.GetCustomAttributes<T>(false).Select(
-                            ca => SetAttributeValue(ca, targetType, null)
+                            ca => SetAttributeValue(ca, targetType)
                         );
                 })
                 .ToArray();
@@ -237,9 +237,10 @@ namespace com.bbbirder
                 throw new($"type {baseType} is not retrievable, which should inherit from IDirectRetrieve");
             }
         }
-        
-        public static bool IsTypeRetrievable(Type type){
-            return IsBaseType(type,typeof(IDirectRetrieve));
+
+        public static bool IsTypeRetrievable(Type type)
+        {
+            return IsBaseType(type, typeof(IDirectRetrieve));
         }
 
         static bool IsBaseType(Type subType, Type baseType)
@@ -253,10 +254,9 @@ namespace com.bbbirder
                 return subType.IsSubclassOf(baseType);
         }
 
-        static T SetAttributeValue<T>(T attr, Type targetType, MemberInfo memberInfo) where T : DirectRetrieveAttribute
+        static T SetAttributeValue<T>(T attr, MemberInfo targetInfo) where T : DirectRetrieveAttribute
         {
-            attr.targetType = targetType;
-            attr.targetMember = memberInfo;
+            attr.targetInfo = targetInfo;
             attr.OnReceiveTarget();
             return attr;
         }

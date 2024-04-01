@@ -13,15 +13,10 @@ namespace com.bbbirder
     public partial class DirectRetrieveAttribute : Attribute
     {
         /// <summary>
-        /// the type marked with this attribute. If marked on a member, this will be the DeclaringType.
-        /// </summary>
-        /// <value></value>
-        public Type targetType { get; internal set; }
-        /// <summary>
         /// the member marked with this attribute, if exists.
         /// </summary>
         /// <value></value>
-        public MemberInfo targetMember { get; internal set; }
+        public MemberInfo targetInfo { get; internal set; }
 
         /// <summary>
         /// on receive target type and member
