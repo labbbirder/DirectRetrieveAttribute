@@ -6,7 +6,7 @@
 
 ## 为什么有用
 
-使用额外的全局元数据而不是反射遍历来实现Attribute获取。
+使用额外的全局元数据而不是反射遍历来实现Attribute获取。**（并且自动preserve标记的类型）**
 
 可以满足以下三大常见需求：
 
@@ -181,21 +181,3 @@ AppDomain.CurrentDomain.GetAssemblies()
 * `Editor` :自动安装功能
 * `Runtime` :运行时检索功能
 * `VSProj~` :RoslynAnalyzer的源码
-
-## Todo List
-
-* ~~**支持 Inherit 参数**~~
-* 还可以继续优化，但是收益不大；欢迎PR。
-  * `GeneratedDirectRetrieveAttribute` 中增加目标Attribute字段
-  * `#NET7_0_OR_GREATER` 宏判断和成员排序
-  * 增加 `GeneratedDirectRetrieveAttribute` 数组的起始元信息，实现遍历早停。
-* ~~Auto CI~~
-
-## 常见问题
-
-|Problem|Reason|Solution|
-|:-:|:-|:-|
-|打包后无法搜索到Attribute|Stripping Level 过高|降低Stripping Level或 [保留代码](https://docs.unity3d.com/Manual/ManagedCodeStripping.html)|
-|提示`GeneratedDirectRetrieveAttribute`未定义|AssemblyDefinition未添加引用|添加本库的模块引用`com.bbbirder.directattribute`|
-
-NOTE THAT : 传统方式也可能遇到上面的问题1。而本库的未来版本可以忽略上面的问题（即自动保留用到的Attribute），当前版本请自己注意代码剥离问题。
