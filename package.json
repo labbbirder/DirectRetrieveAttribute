@@ -2,7 +2,11 @@
   "name": "com.bbbirder.directattribute",
   "description": "Retrieve attributes and subtypes efficiently, meanwhile, retrieve target type and member directly from an attribute",
   "displayName": "Direct Attribute",
-  "version": "2.0.0",
+  "version": "2.0.11",
   "hideInEditor": false,
-  "author": "bbbirder <502100554@qq.com>"
+  "author": "bbbirder <502100554@qq.com>",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "gitHead": "fa49cc070f60bda404513e03179ce070c40b41ae"
 }
