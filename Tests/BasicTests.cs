@@ -18,7 +18,6 @@ public class BasicTests
         var sl = Retriever.GetAllSubtypes(typeof(T), typeof(BasicTests).Assembly);
         Assert.AreEqual(count, sl.Length);
     }
-    // A Test behaves as an ordinary method
     [Test]
     public void TestGenerics()
     {
@@ -99,7 +98,8 @@ namespace bt_it
         Baz,
         Length,
     }
-    class MyBaseType : IDirectRetrieve
+    [RetrieveSubtype]
+    class MyBaseType
     {
 
     }
@@ -111,8 +111,8 @@ namespace bt_it
     class SubC<T> : SubA<T> { }
     class SubD : SubB { }
 
-
-    interface IMyInterface : IDirectRetrieve
+    [RetrieveSubtype]
+    interface IMyInterface
     {
 
     }
