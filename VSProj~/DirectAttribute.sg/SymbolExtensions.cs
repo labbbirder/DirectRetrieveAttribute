@@ -1,25 +1,16 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using com.bbbirder;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Xml.Linq;
-using com.bbbirder;
-using System.Diagnostics;
 
 namespace DirectAttribute.sg
 {
 
     public static class SymbolExtensions
     {
-        public class RetrieveAttributeData
-        {
-            public INamedTypeSymbol targetType;
-            public string memberName;
-        }
 
         public static bool IsGlobalAccessible(this TypeDeclarationSyntax syntax, SemanticModel model)
         {
@@ -39,32 +30,13 @@ namespace DirectAttribute.sg
             return accessible;
         }
 
-        //public static RetrieveAttributeData ParseDirectAttribute(this AttributeData attr)
-        //{
-        //    var args = attr.ConstructorArguments;
-        //    if (args.Count() == 1)
-        //    {
-        //        var type = args[0].Value as INamedTypeSymbol;
-        //        return new() { targetType = type };
-        //    }
-        //    else if (args.Count() == 2)
-        //    {
-        //        var type = args[0].Value as INamedTypeSymbol;
-        //        return new() { targetType = type, memberName = (string)args[1].Value };
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
-        //}
         public static bool HasDirectAttribute(this ISymbol symbol)
         {
             var attributes = symbol?.GetAttributes();
             if (attributes == null) return false;
 
-            return attributes.Value.Any(a =>
-            {
-                    return a.AttributeClass.IsTypeOrSubtype(typeof(DirectRetrieveAttribute));
+            return attributes.Value.Any(a => {
+                return a.AttributeClass.IsTypeOrSubtype(typeof(DirectRetrieveAttribute));
             });
         }
 
@@ -86,13 +58,21 @@ namespace DirectAttribute.sg
             }
             return IsTypeOrSubtype(symbol.BaseType, basetype);
         }
-        public static SemanticModel GetModel(this SyntaxNode node, GeneratorExecutionContext context)
+
+        private static bool CheckDirectAttributeOnBaseType(this INamedTypeSymbol symbol)
         {
-            var tree = node.SyntaxTree;
-            if (!context.Compilation.ContainsSyntaxTree(tree)) return null;
-            return context.Compilation.GetSemanticModel(tree);
+            if (symbol.BaseType != null)
+            {
+                if (symbol.BaseType.HasDirectAttribute())
+                {
+                    return true;
+                }
+                return symbol.BaseType.CheckDirectAttributeOnBaseType();
+            }
+            return false;
         }
-        public static string GetDisplayStringWithoutTypeName(this INamedTypeSymbol symbol)
+
+        public static string GetFullNameWithoutGenericParameters(this INamedTypeSymbol symbol)
         {
             var builder = new StringBuilder();
             if (symbol.ContainingNamespace.IsGlobalNamespace)
@@ -113,72 +93,51 @@ namespace DirectAttribute.sg
                 builder.Append(nestType.Name);
                 if (nestType.IsGenericType && nestType.TypeParameters.Length > 0)
                 {
-                    var commaCount = nestType.TypeParameters.Length - 1;
                     builder.Append('<');
-                    builder.Append(',', commaCount);
+                    for (int i = 0; i < nestType.TypeParameters.Length; i++)
+                    {
+                        //var gp = nestType.TypeParameters[i];
+                        //builder.Append('`');
+                        //builder.Append(gp.Ordinal + 1);
+                        if (i != nestType.TypeParameters.Length - 1)
+                        {
+                            builder.Append(',');
+                        }
+                    }
                     builder.Append('>');
                 }
                 if (!isTail) builder.Append(".");
             }
         }
-        public static bool HasAttribute(this ISymbol symbol, string atrributeName)
+
+        public static string GetAssemblyQualifiedName(this INamedTypeSymbol symbol)
         {
-            return symbol.GetAttributes()
-                .Any(_ => _.AttributeClass?.ToDisplayString() == atrributeName);
-        }
-        public static AttributeData FindAttribute(this ISymbol symbol, string atrributeName)
-        {
-            return symbol.GetAttributes()
-                .FirstOrDefault(_ => _.AttributeClass?.ToDisplayString() == atrributeName);
-        }
-        //public static bool GetInherit(this AttributeData attr)
-        //{
-        //    return attr?.AttributeClass != null && attr.AttributeClass.GetAttributeNamedArgument("Inherited");
-        //}
-        //public static bool GetAllowMultiple(this AttributeData attr)
-        //{
-        //    return attr.AttributeClass.GetAttributeNamedArgument("AllowMultiple");
-        //}
-        //static bool GetAttributeNamedArgument(this INamedTypeSymbol attrClass, string argumentName, bool omitValue = false)
-        //{
-        //    var attrs = attrClass.GetAttributes();
-        //    var usage = attrClass.FindAttribute("System.AttributeUsageAttribute");
-        //    if (usage != null)
-        //    {
-        //        var arg = usage.NamedArguments.FirstOrDefault(arg => arg.Key == argumentName);
-        //        if (arg.Key != argumentName) return omitValue;
-        //        return (bool)arg.Value.Value;
-        //    }
-        //    if (attrClass.BaseType != null)
-        //    {
-        //        return attrClass.BaseType.GetAttributeNamedArgument(argumentName);
-        //    }
-        //    return omitValue;
-        //}
-        public static bool CheckDirectAttributeDeeply(this ISymbol symbol)
-        {
-            if (!(symbol is INamedTypeSymbol typeSymbol)) return false;
-            if (symbol.HasDirectAttribute())
+            var builder = new StringBuilder();
+            if (symbol.ContainingNamespace.IsGlobalNamespace)
             {
-                return true;
+                builder.Append("global::");
             }
-            if (typeSymbol.AllInterfaces.Any(i => i.IsTypeOrSubtype(typeof(IDirectRetrieve))))
+            else
             {
-                return true;
+                builder.Append(symbol.ContainingNamespace.ToString());
+                builder.Append(".");
             }
-            return typeSymbol.CheckDirectAttributeOnBaseType();
-        }
-        static bool CheckDirectAttributeOnBaseType(this INamedTypeSymbol symbol)
-        {
-            if (symbol.BaseType != null)
+            AppendNestType(symbol, true);
+            builder.Append(", ");
+            builder.Append(symbol.ContainingAssembly.Name);
+            return builder.ToString();
+            void AppendNestType(INamedTypeSymbol nestType, bool isTail = false)
             {
-                if (symbol.BaseType.HasDirectAttribute())
+                if (nestType == null) return;
+                AppendNestType(nestType.ContainingType);
+                builder.Append(nestType.Name);
+                if (nestType.IsGenericType && nestType.TypeParameters.Length > 0)
                 {
-                    return true;
+                    builder.Append('`');
+                    builder.Append(nestType.TypeParameters.Length);
                 }
-                return symbol.BaseType.CheckDirectAttributeOnBaseType();
+                if (!isTail) builder.Append("+");
             }
-            return false;
         }
 
         /// <summary>
@@ -202,6 +161,7 @@ namespace DirectAttribute.sg
             return symbol.Name == anotherType.Name
                 && sameNamespace;
         }
+
         public static bool IsDerivedFromType(this INamedTypeSymbol symbol, string typeName)
         {
             if (symbol.Name == typeName)
@@ -215,11 +175,6 @@ namespace DirectAttribute.sg
             }
 
             return symbol.BaseType.IsDerivedFromType(typeName);
-        }
-
-        public static bool IsImplements(this INamedTypeSymbol symbol, string typeName)
-        {
-            return symbol.AllInterfaces.Any(_ => _.ToDisplayString() == typeName);
         }
     }
 }

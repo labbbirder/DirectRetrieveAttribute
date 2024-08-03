@@ -7,6 +7,9 @@ using UnityEngine.Scripting;
 
 namespace com.bbbirder
 {
+    /// <summary>
+    /// Define on arbitrary type or member to retrieve the target directly at runtime.
+    /// </summary>
 #if UNITY_5_3_OR_NEWER
     [Preserve]
 #endif
@@ -21,8 +24,18 @@ namespace com.bbbirder
         /// <summary>
         /// on receive target type and member
         /// </summary>
-        public virtual void OnReceiveTarget(){
+        public virtual void OnReceiveTarget()
+        {
 
         }
     }
+
+    /// <summary>
+    /// Define on a non-sealed class or interface to retrieve all subtypes and implements
+    /// </summary>
+#if UNITY_5_3_OR_NEWER
+    [Preserve]
+#endif
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, Inherited = true)]
+    public partial class RetrieveSubtypeAttribute : Attribute { }
 }
