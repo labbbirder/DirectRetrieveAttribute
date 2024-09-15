@@ -24,39 +24,39 @@ namespace DirectAttribute.sg
             DiagGenerate.AnalyzerID, DiagGenerate.AnalyzerTitle, DiagGenerate.AnalyzerMessageFormat,
             "bbbirder", DiagnosticSeverity.Error, true);
 
-        private static Dictionary<ITypeSymbol, bool> retrievableTypesCache = new();
+        //private static Dictionary<ITypeSymbol, bool> retrievableTypesCache = new();
         private static bool IsTypeRetrievable(ITypeSymbol symbol)
         {
-            if (!retrievableTypesCache.TryGetValue(symbol, out var result))
+            //if (!retrievableTypesCache.TryGetValue(symbol, out var result))
+            //{
+            var result = false;
+            //if (!result)
+            //{
+            foreach (var baseType in symbol.GetBaseTypes(false))
             {
-                result = false;
-                if (!result)
+                if (IsTypeRetrievable(baseType))
                 {
-                    foreach (var baseType in symbol.GetBaseTypes(false))
-                    {
-                        if (IsTypeRetrievable(baseType))
-                        {
-                            result = true;
-                            break;
-                        }
-                    }
+                    result = true;
+                    break;
                 }
-
-                if (!result)
-                {
-                    foreach (var interf in symbol.AllInterfaces)
-                    {
-                        if (IsTypeRetrievable(interf))
-                        {
-                            result = true;
-                            break;
-                        }
-                    }
-                }
-
-                result |= symbol.GetAttribute<RetrieveSubtypeAttribute>() != null;
-                retrievableTypesCache[symbol] = result;
             }
+            //}
+
+            if (!result)
+            {
+                foreach (var interf in symbol.AllInterfaces)
+                {
+                    if (IsTypeRetrievable(interf))
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+            }
+
+            result |= symbol.GetAttribute<RetrieveSubtypeAttribute>() != null;
+            //retrievableTypesCache[symbol] = result;
+            //}
 
             return result;
         }
