@@ -117,7 +117,7 @@ namespace DirectAttribute.sg
         private static T ToAttribute<T>(this AttributeData data) where T : Attribute
         {
             if (data is null) return null;
-            var constructorArguments = data.ConstructorArguments.Select(a => a.Value).ToArray();
+            var constructorArguments = data.ConstructorArguments.Select(a => a.Kind == TypedConstantKind.Array ? a.Values : a.Value).ToArray();
             var attribute = default(T);
             try
             {
