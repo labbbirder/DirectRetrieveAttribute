@@ -137,7 +137,6 @@ namespace com.bbbirder
             return GetAllAttributes(attrType, assembly).OfType<T>().ToArray();
         }
 
-
         /// <summary>
         /// Retrieve all subclasses that inherit from the target type
         /// </summary>
@@ -152,18 +151,33 @@ namespace com.bbbirder
                 ;
         }
 
+        internal static Type[] GetAllSubtypesInCurrentAppDomain()
+        {
+            return typeSet.Value
+                .ToArray()
+                ;
+        }
+
+        internal static DirectRetrieveAttribute[] GetAllAttributesInCurrentAppDomain()
+        {
+            return attrLut.Value.SelectMany(r => r.Value)
+                .ToArray()
+                ;
+        }
+
         private static bool IsTypeOf(Type type, Type baseType)
         {
             if (baseType.IsGenericTypeDefinition)
             {
                 return GetTypesTowardsBase(type).Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType)
-                         || type.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType)
+                    || type.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType)
                     ;
             }
             else
             {
                 return baseType.IsAssignableFrom(type);
             }
+
             static IEnumerable<Type> GetTypesTowardsBase(Type type)
             {
                 while (type != null)

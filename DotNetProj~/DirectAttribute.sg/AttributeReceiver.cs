@@ -1,6 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
 
 namespace DirectAttribute.sg
 {
@@ -30,6 +30,7 @@ namespace DirectAttribute.sg
                     memberDeclarationsWithAttribute.Add(member);
                 }
             }
+
             if (syntaxNode is TypeDeclarationSyntax td)
             {
                 typeDeclarations.Add(td);

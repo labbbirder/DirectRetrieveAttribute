@@ -18,14 +18,16 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
   </ItemGroup>
 
   <!--直接引用项目工程有些bug-->
   <ItemGroup>
-	  <Compile Include="../../Runtime/DirectRetrieveAttribute.cs" Link="SharedSymbols\DirectAttribute.cs" />
+    <Compile Include="../../Runtime/DirectRetrieveAttribute.cs" Link="SharedSymbols\DirectAttribute.cs" />
+    <Compile Include="../../Runtime/RetrieveSubtypeAttribute.cs" Link="SharedSymbols\RetrieveSubtypeAttribute.cs" />
   </ItemGroup>
-	
+
   <ItemGroup>
     <Compile Update="Diagnostics\NotAccessible.Designer.cs">
       <DesignTime>True</DesignTime>

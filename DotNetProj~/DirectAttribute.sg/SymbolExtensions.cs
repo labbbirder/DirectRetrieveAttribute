@@ -1,17 +1,16 @@
-﻿using com.bbbirder;
+﻿using System;
+using System.Linq;
+using System.Text;
+using com.bbbirder;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Linq;
-using System.Text;
 
 namespace DirectAttribute.sg
 {
 
     public static class SymbolExtensions
     {
-
         public static bool IsGlobalAccessible(this TypeDeclarationSyntax syntax, SemanticModel model)
         {
             var targetTypeSymbol = model.GetDeclaredSymbol(syntax);
@@ -35,7 +34,8 @@ namespace DirectAttribute.sg
             var attributes = symbol?.GetAttributes();
             if (attributes == null) return false;
 
-            return attributes.Value.Any(a => {
+            return attributes.Value.Any(a =>
+            {
                 return a.AttributeClass.IsTypeOrSubtype(typeof(DirectRetrieveAttribute));
             });
         }
@@ -52,10 +52,12 @@ namespace DirectAttribute.sg
             {
                 return true;
             }
+
             if (symbol.BaseType is null)
             {
                 return false;
             }
+
             return IsTypeOrSubtype(symbol.BaseType, basetype);
         }
 
@@ -67,8 +69,10 @@ namespace DirectAttribute.sg
                 {
                     return true;
                 }
+
                 return symbol.BaseType.CheckDirectAttributeOnBaseType();
             }
+
             return false;
         }
 
@@ -84,6 +88,7 @@ namespace DirectAttribute.sg
                 builder.Append(symbol.ContainingNamespace.ToString());
                 builder.Append(".");
             }
+
             AppendNestType(symbol, true);
             return builder.ToString();
             void AppendNestType(INamedTypeSymbol nestType, bool isTail = false)
@@ -104,8 +109,10 @@ namespace DirectAttribute.sg
                             builder.Append(',');
                         }
                     }
+
                     builder.Append('>');
                 }
+
                 if (!isTail) builder.Append(".");
             }
         }
@@ -122,6 +129,7 @@ namespace DirectAttribute.sg
                 builder.Append(symbol.ContainingNamespace.ToString());
                 builder.Append(".");
             }
+
             AppendNestType(symbol, true);
             builder.Append(", ");
             builder.Append(symbol.ContainingAssembly.Name);
@@ -136,6 +144,7 @@ namespace DirectAttribute.sg
                     builder.Append('`');
                     builder.Append(nestType.TypeParameters.Length);
                 }
+
                 if (!isTail) builder.Append("+");
             }
         }

@@ -16,6 +16,11 @@ namespace com.bbbirder
     public partial class DirectRetrieveAttribute : Attribute
     {
         /// <summary>
+        /// Whether the target should be automatically preserved in build.
+        /// </summary>
+        public virtual bool PreserveTarget => false;
+
+        /// <summary>
         /// the member marked with this attribute, if exists.
         /// </summary>
         /// <value></value>
@@ -29,13 +34,4 @@ namespace com.bbbirder
 
         }
     }
-
-    /// <summary>
-    /// Define on a non-sealed class or interface to retrieve all subtypes and implements
-    /// </summary>
-#if UNITY_5_3_OR_NEWER
-    [Preserve]
-#endif
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, Inherited = true)]
-    public partial class RetrieveSubtypeAttribute : Attribute { }
 }

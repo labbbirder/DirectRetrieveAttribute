@@ -1,8 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using Microsoft.CodeAnalysis;
 
 namespace DirectAttribute.sg
 {
@@ -14,6 +14,7 @@ namespace DirectAttribute.sg
             {
                 return "";
             }
+
             return ns.ToString();
         }
 
@@ -79,6 +80,7 @@ namespace DirectAttribute.sg
             {
                 if (declType.DeclaredAccessibility < Accessibility.Internal) return false;
             }
+
             return true;
         }
 
@@ -88,6 +90,7 @@ namespace DirectAttribute.sg
             {
                 if (baseType is INamedTypeSymbol namedType && namedType.IsFullNameEquals<T>()) return true;
             }
+
             return false;
         }
 
@@ -135,9 +138,8 @@ namespace DirectAttribute.sg
                 attribute.GetType().GetProperty(name)?.SetValue(attribute, value);
                 attribute.GetType().GetField(name)?.SetValue(attribute, value);
             }
+
             return attribute as T;
         }
-
-
     }
 }

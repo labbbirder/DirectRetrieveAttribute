@@ -1,13 +1,13 @@
-﻿using com.bbbirder;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using com.bbbirder;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DiagAccessible = DirectAttribute.sg.Diagnostics.NotAccessible;
 using DiagGenerate = DirectAttribute.sg.Diagnostics.NotGenerated;
 
@@ -17,30 +17,27 @@ namespace DirectAttribute.sg
     public class Generator : ISourceGenerator
     {
         private const string ValidAssemblyName = "com.bbbirder.directattribute";
-        private readonly DiagnosticDescriptor DiagnosticNotAccessible = new(
-            DiagAccessible.AnalyzerID, DiagAccessible.AnalyzerTitle, DiagAccessible.AnalyzerMessageFormat,
-            "bbbirder", DiagnosticSeverity.Error, true);
+        //private readonly DiagnosticDescriptor DiagnosticNotAccessible = new(
+        //    DiagAccessible.AnalyzerID, DiagAccessible.AnalyzerTitle, DiagAccessible.AnalyzerMessageFormat,
+        //    "bbbirder", DiagnosticSeverity.Error, true);
         private readonly DiagnosticDescriptor DiagnosticNotGenerated = new(
             DiagGenerate.AnalyzerID, DiagGenerate.AnalyzerTitle, DiagGenerate.AnalyzerMessageFormat,
             "bbbirder", DiagnosticSeverity.Error, true);
 
-        //private static Dictionary<ITypeSymbol, bool> retrievableTypesCache = new();
         private static bool IsTypeRetrievable(ITypeSymbol symbol)
         {
-            //if (!retrievableTypesCache.TryGetValue(symbol, out var result))
-            //{
-            var result = false;
-            //if (!result)
-            //{
-            foreach (var baseType in symbol.GetBaseTypes(false))
+            var result = symbol.GetAttribute<RetrieveSubtypeAttribute>() != null;
+            if (!result)
             {
-                if (IsTypeRetrievable(baseType))
+                foreach (var baseType in symbol.GetBaseTypes(false))
                 {
-                    result = true;
-                    break;
+                    if (IsTypeRetrievable(baseType))
+                    {
+                        result = true;
+                        break;
+                    }
                 }
             }
-            //}
 
             if (!result)
             {
@@ -54,17 +51,13 @@ namespace DirectAttribute.sg
                 }
             }
 
-            result |= symbol.GetAttribute<RetrieveSubtypeAttribute>() != null;
-            //retrievableTypesCache[symbol] = result;
-            //}
-
             return result;
         }
 
         public void Execute(GeneratorExecutionContext context)
         {
             var containsValidReference = context.Compilation.ReferencedAssemblyNames.Any(n => n.Name.Equals(ValidAssemblyName));
-            //if (!containsValidReference) return;
+            if (!containsValidReference) return;
 
             try
             {
@@ -75,8 +68,8 @@ namespace DirectAttribute.sg
                 }
 
                 var builder = new StringBuilder();
-                var typeSymbols = new HashSet<INamedTypeSymbol>();
-                var memberSymbols = new HashSet<ISymbol>();
+                var typeSymbols = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+                var memberSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
                 foreach (var member in receiver.memberDeclarationsWithAttribute)
                 {
                     var model = context.Compilation.GetSemanticModel(member.SyntaxTree);
