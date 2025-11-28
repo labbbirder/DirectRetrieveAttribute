@@ -1,8 +1,12 @@
 {
-    "name": "com.bbbirder.directattribute",
+    "name": "BBBirder.DirectAttribute.Editor",
     "rootNamespace": "",
-    "references": [],
-    "includePlatforms": [],
+    "references": [
+        "BBBirder.DirectAttribute"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

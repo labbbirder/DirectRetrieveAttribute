@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using com.bbbirder;
+using System.Linq;
+using BBBirder.DirectAttribute;
 using NameA;
 using NUnit.Framework;
 using UnityEngine;
@@ -9,13 +11,13 @@ public class DirectAttributeTests
 {
     static void AssertCount<T>(int count) where T : DirectRetrieveAttribute
     {
-        var al = Retriever.GetAllAttributes<T>(typeof(DirectAttributeTests).Assembly);
+        var al = Retriever.GetAllAttributes<T>(typeof(DirectAttributeTests).Assembly).ToArray();
         if (al.Length != count)
         {
             Debug.Log("only found:");
             foreach (var a in al)
             {
-                Debug.Log(a.targetInfo);
+                Debug.Log(a.TargetMember);
             }
         }
 
@@ -24,7 +26,7 @@ public class DirectAttributeTests
 
     static void AssertSubTypeCount<T>(int count)
     {
-        var sl = Retriever.GetAllSubtypes(typeof(T), typeof(DirectAttributeTests).Assembly);
+        var sl = Retriever.GetAllSubtypes(typeof(T), typeof(DirectAttributeTests).Assembly).ToArray();
         if (sl.Length != count)
         {
             Debug.Log("only found:");
@@ -66,7 +68,14 @@ public class DirectAttributeTests
     {
         AssertCount<TestEnumAttribute>(2);
     }
+
+    [Test]
+    public void GenericInstanceSubtype_ShouldBeCollected()
+    {
+        AssertSubTypeCount<GenericImplementA<int>>(1);
+    }
 }
+
 
 class TestEnumAttribute : DirectRetrieveAttribute
 {
@@ -102,7 +111,6 @@ namespace NameA.SubnameB
         [TestGeneric]
         void GenericMethodInGenericType2<T0, T1>(T1 g)
         {
-
         }
     }
 
@@ -158,6 +166,7 @@ namespace NameA.SubnameB
     }
 }
 
+
 namespace NameA
 {
     enum FooEnum
@@ -171,7 +180,7 @@ namespace NameA
         Length,
     }
 
-    [RetrieveSubtype(preserveSubtypes: true)]
+    [RetrieveSubtype]
     class MyBaseType
     {
 
@@ -188,11 +197,8 @@ namespace NameA
 
     class SubTypeD : PlainSubTypeB { }
 
-    [RetrieveSubtype(preserveSubtypes: true)]
-    interface IMyInterface
-    {
-
-    }
+    [RetrieveSubtype]
+    interface IMyInterface { }
 
     class GenericImplementA<T> : IMyInterface
     {

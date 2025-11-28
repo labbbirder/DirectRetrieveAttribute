@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using com.bbbirder;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -29,17 +28,6 @@ namespace DirectAttribute.sg
             return accessible;
         }
 
-        public static bool HasDirectAttribute(this ISymbol symbol)
-        {
-            var attributes = symbol?.GetAttributes();
-            if (attributes == null) return false;
-
-            return attributes.Value.Any(a =>
-            {
-                return a.AttributeClass.IsTypeOrSubtype(typeof(DirectRetrieveAttribute));
-            });
-        }
-
         /// <summary>
         /// Whether the symbol is a target type. Check basetype only.
         /// </summary>
@@ -59,21 +47,6 @@ namespace DirectAttribute.sg
             }
 
             return IsTypeOrSubtype(symbol.BaseType, basetype);
-        }
-
-        private static bool CheckDirectAttributeOnBaseType(this INamedTypeSymbol symbol)
-        {
-            if (symbol.BaseType != null)
-            {
-                if (symbol.BaseType.HasDirectAttribute())
-                {
-                    return true;
-                }
-
-                return symbol.BaseType.CheckDirectAttributeOnBaseType();
-            }
-
-            return false;
         }
 
         public static string GetFullNameWithoutGenericParameters(this INamedTypeSymbol symbol)

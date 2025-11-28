@@ -1,4 +1,6 @@
-﻿using com.bbbirder;
+﻿using System.Reflection;
+using BBBirder.DirectAttribute;
+using com.bbbirder;
 using ModuleA;
 
 namespace ModuleB
@@ -7,8 +9,13 @@ namespace ModuleB
     {
 
     }
-    public class MarkB : DirectRetrieveAttribute
+    public class MarkB :DirectRetrieveAttribute
     {
-
+        public MemberInfo TargetMember { get; set; }
+        public bool PreserveTarget { get; }
+        public void OnReceiveTarget()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

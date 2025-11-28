@@ -1,10 +1,10 @@
 {
-    "name": "com.bbbirder.directattribute.Tests",
+    "name": "BBBirder.DirectAttribute.Tests",
     "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "com.bbbirder.directattribute"
+        "BBBirder.DirectAttribute"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

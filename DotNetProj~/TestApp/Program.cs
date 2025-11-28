@@ -1,4 +1,6 @@
-﻿using com.bbbirder;
+﻿using System.Reflection;
+using BBBirder.DirectAttribute;
+using com.bbbirder;
 using ModuleB;
 using NS1;
 
@@ -16,9 +18,12 @@ namespace NS1
             [MarkB]
             public void Test<K>()
             {
-
             }
             private class Foo1 : IFeatureB
+            {
+                [MarkB] private string Name { get; set; }
+            }
+            private class Foo2: IFeatureB
             {
                 [MarkB] private string Name { get; set; }
             }
@@ -32,6 +37,7 @@ namespace NS1
     }
 
     public class Provider : IProvider<string> { }
+
     [RetrieveSubtype]
     internal interface IProvider<T> { }
 }
@@ -48,10 +54,10 @@ internal partial class Program
         }
         Console.WriteLine($"\n\n");
 
-        var attrs = Retriever.GetAllAttributes<MarkB>();
-        foreach (var attr in attrs)
-        {
-            Console.WriteLine($"{attr} {attr.targetInfo}");
-        }
+        // var attrs = Retriever.GetAllAttributes<MarkB>();
+        // foreach (var attr in attrs)
+        // {
+        //     Console.WriteLine($"{attr} {attr.targetInfo}");
+        // }
     }
 }

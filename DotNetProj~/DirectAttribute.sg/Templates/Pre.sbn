@@ -1,0 +1,32 @@
+﻿using System;
+using System.Reflection;
+
+namespace BBBirder
+{
+    /// <summary>
+    /// Define on arbitrary type or member to retrieve the target directly at runtime.
+    /// </summary>
+    internal partial class DirectRetrieveAttribute : Attribute
+    {
+        /// <summary>
+        /// Whether the target should be automatically preserved in build.
+        /// </summary>
+        public virtual bool PreserveTarget => false;
+
+        /// <summary>
+        /// the member marked with this attribute, if exists.
+        /// </summary>
+        /// <value></value>
+        public MemberInfo targetInfo { get; internal set; }
+
+        /// <summary>
+        /// on receive target type and member
+        /// </summary>
+        public virtual void OnReceiveTarget()
+        {
+
+        }
+    }
+
+    internal interface IRetrieveSubtype { }
+}

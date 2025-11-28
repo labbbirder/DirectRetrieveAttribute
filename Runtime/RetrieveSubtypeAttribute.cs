@@ -4,7 +4,7 @@ using System;
 using UnityEngine.Scripting;
 #endif
 
-namespace com.bbbirder
+namespace BBBirder.DirectAttribute
 {
     /// <summary>
     /// Define on a non-sealed class or interface to retrieve all subtypes and implements
@@ -13,7 +13,7 @@ namespace com.bbbirder
     [Preserve]
 #endif
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, Inherited = true)]
-    public partial class RetrieveSubtypeAttribute : Attribute
+    public sealed class RetrieveSubtypeAttribute : Attribute
     {
         public readonly bool PreserveSubtypes = false;
 

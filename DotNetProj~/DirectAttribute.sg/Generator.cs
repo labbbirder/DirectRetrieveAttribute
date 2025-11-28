@@ -1,177 +1,223 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using com.bbbirder;
+using BBBirder.DirectAttribute;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using DiagAccessible = DirectAttribute.sg.Diagnostics.NotAccessible;
-using DiagGenerate = DirectAttribute.sg.Diagnostics.NotGenerated;
+using Scriban;
 
 namespace DirectAttribute.sg
 {
-    [Generator]
-    public class Generator : ISourceGenerator
+    [Generator(LanguageNames.CSharp)]
+    public class Generator : IIncrementalGenerator
     {
-        private const string ValidAssemblyName = "com.bbbirder.directattribute";
-        //private readonly DiagnosticDescriptor DiagnosticNotAccessible = new(
-        //    DiagAccessible.AnalyzerID, DiagAccessible.AnalyzerTitle, DiagAccessible.AnalyzerMessageFormat,
-        //    "bbbirder", DiagnosticSeverity.Error, true);
-        private readonly DiagnosticDescriptor DiagnosticNotGenerated = new(
-            DiagGenerate.AnalyzerID, DiagGenerate.AnalyzerTitle, DiagGenerate.AnalyzerMessageFormat,
-            "bbbirder", DiagnosticSeverity.Error, true);
+        private const string EditTimeKeyword = "ROSLYN_EDIT_TIME";
 
-        private static bool IsTypeRetrievable(ITypeSymbol symbol)
+        public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var result = symbol.GetAttribute<RetrieveSubtypeAttribute>() != null;
-            if (!result)
+            var isEditTimePipeline = context.CompilationProvider.Select((opt, ct) =>
             {
-                foreach (var baseType in symbol.GetBaseTypes(false))
-                {
-                    if (IsTypeRetrievable(baseType))
-                    {
-                        result = true;
-                        break;
-                    }
-                }
-            }
+                var tree = opt.SyntaxTrees.FirstOrDefault();
+                if (tree is null) return false;
+                return tree.Options.PreprocessorSymbolNames
+                    .Contains(EditTimeKeyword, StringComparer.InvariantCulture);
+            });
 
-            if (!result)
+            // We just need to generate on actual build, hence we don't need to build the whole pipelines.
+
+            var outPipeline = isEditTimePipeline.Combine(context.CompilationProvider);
+            context.RegisterImplementationSourceOutput(outPipeline, (ctx, source) =>
             {
-                foreach (var interf in symbol.AllInterfaces)
+                try
                 {
-                    if (IsTypeRetrievable(interf))
-                    {
-                        result = true;
-                        break;
-                    }
+                    var (isEditTime, comp) = source;
+                    ProcessOutput(ctx, isEditTime, comp);
                 }
-            }
-
-            return result;
+                catch (Exception e)
+                {
+                    ctx.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor("BB001", "SGERR", e.ToString(), "SGERR", DiagnosticSeverity.Error,
+                            true),
+                        null));
+                }
+            });
         }
 
-        public void Execute(GeneratorExecutionContext context)
+        private static void ProcessOutput(SourceProductionContext ctx, bool isEditTime, Compilation comp)
         {
-            var containsValidReference = context.Compilation.ReferencedAssemblyNames.Any(n => n.Name.Equals(ValidAssemblyName));
-            if (!containsValidReference) return;
-
-            try
+            if (isEditTime)
             {
-                var receiver = context.SyntaxReceiver as AttributeReceiver;
-                if (receiver is null)
+                ctx.AddSource($"{comp.AssemblyName}-direct-retrieve.g.cs", "// ignore empty output");
+                return;
+            }
+
+            var sms = new Dictionary<SyntaxTree, SemanticModel>();
+            var typeTexts = new Dictionary<INamedTypeSymbol, string>(comparer: SymbolEqualityComparer.Default);
+            var privateTypes = new List<string>();
+
+            // structure marked members
+
+            var attrs = comp.SyntaxTrees.SelectMany(t =>
+                t.GetRoot().DescendantNodesAndSelf().OfType<AttributeSyntax>());
+
+            var markedMembers =
+                new Dictionary<INamedTypeSymbol, List<object>>(comparer: SymbolEqualityComparer.Default);
+            foreach (var attr in attrs)
+            {
+                var model = GetModel(attr.SyntaxTree);
+                var attrType = model.GetTypeInfo(attr).Type as INamedTypeSymbol;
+
+                if (!attrType.IsTypeOrSubTypeOf<DirectRetrieveAttribute>()) continue;
+
+                var targetMember =
+                    attr.Parent?.FirstAncestorOrSelf<AttributeListSyntax>()?.Parent as MemberDeclarationSyntax;
+                if (targetMember is null) continue;
+
+
+                if (!markedMembers.TryGetValue(attrType, out var list))
                 {
-                    return;
+                    markedMembers[attrType] = list = new();
                 }
 
-                var builder = new StringBuilder();
-                var typeSymbols = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-                var memberSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-                foreach (var member in receiver.memberDeclarationsWithAttribute)
+                IEnumerable<SyntaxNode> memberNodes = targetMember is FieldDeclarationSyntax field
+                    ? field.Declaration.Variables
+                    : new[] { targetMember };
+
+                foreach (var memberNode in memberNodes)
                 {
-                    var model = context.Compilation.GetSemanticModel(member.SyntaxTree);
-                    if (member is BaseFieldDeclarationSyntax fd)
+                    var member = model.GetDeclaredSymbol(memberNode);
+
+                    list.Add(new
                     {
-                        foreach (var v in fd.Declaration.Variables)
-                        {
-                            var symbol = model.GetDeclaredSymbol(v);
-                            VisitSymbol(symbol);
-                        }
+                        type_text = GetTypeText(member is INamedTypeSymbol nts ? nts : member.ContainingType),
+                        member_name = member is INamedTypeSymbol ? null : member.Name,
+                    });
+                }
+
+                //GC.KeepAlive(attr);
+                //GC.KeepAlive(targetMember);
+            }
+
+            // structure subtypes
+
+            var decls = comp.SyntaxTrees.SelectMany(t =>
+                t.GetRoot().DescendantNodesAndSelf().OfType<BaseTypeDeclarationSyntax>());
+
+            var collectedType =
+                new Dictionary<INamedTypeSymbol, bool>(comparer: SymbolEqualityComparer.Default);
+            var typeDerives =
+                new Dictionary<INamedTypeSymbol, List<string>>(comparer: SymbolEqualityComparer.Default);
+            foreach (var decl in decls)
+            {
+                var typeInfo = GetModel(decl.SyntaxTree).GetDeclaredSymbol(decl);
+
+                var registered = false;
+                foreach (var interfType in typeInfo.Interfaces.Where(IsTypeCollected))
+                {
+                    var interfDefType = GetDefination(interfType);
+                    if (!typeDerives.TryGetValue(interfDefType, out var list))
+                    {
+                        typeDerives[interfDefType] = list = new();
+                    }
+
+                    list.Add(GetTypeText(typeInfo));
+                    registered = true;
+                }
+
+                if (registered || typeInfo.BaseType is not { } baseType) continue;
+
+                var baseDefType = GetDefination(baseType);
+                var shouldCollect = typeDerives.ContainsKey(baseDefType)
+                                    || typeInfo.GetBaseTypes(includeSelf: false).OfType<INamedTypeSymbol>()
+                                        .Any(IsTypeCollected);
+                if (shouldCollect)
+                {
+                    if (!typeDerives.TryGetValue(baseDefType, out var list))
+                    {
+                        typeDerives[baseDefType] = list = new();
+                    }
+
+                    list.Add(GetTypeText(typeInfo));
+                }
+            }
+
+            if (!markedMembers.Any() && !typeDerives.Any())
+            {
+                ctx.AddSource($"{comp.AssemblyName}-direct-retrieve.g.cs", "// ignore empty output");
+                return;
+            }
+
+            var content = Template.Parse(Templates.MarkedMembers).Render(new
+            {
+                privateTypes,
+                target_members = markedMembers
+                    .Select(kvp => new { attr_type_text = GetTypeText(kvp.Key), records = kvp.Value, }),
+                subtype_infos = typeDerives
+                    .Select(kvp => new { base_type_text = GetTypeText(kvp.Key), subtypes = kvp.Value }),
+            });
+
+            ctx.AddSource($"{comp.AssemblyName}-direct-retrieve.g.cs", content);
+
+            bool IsTypeCollected(INamedTypeSymbol type)
+            {
+                if (!collectedType.TryGetValue(type, out var isCollected))
+                {
+                    isCollected =
+                        type.GetAttribute<RetrieveSubtypeAttribute>() != null
+                        || type.AllInterfaces.Any(IsTypeCollected)
+                        || type.GetBaseTypes(false).OfType<INamedTypeSymbol>()
+                            .Any(IsTypeCollected)
+                        ;
+                    collectedType[type] = isCollected;
+                }
+
+                return isCollected;
+            }
+
+            SemanticModel GetModel(SyntaxTree tree)
+            {
+                if (!sms.TryGetValue(tree, out var model))
+                {
+                    sms[tree] = model = comp.GetSemanticModel(tree);
+                }
+
+                return model;
+            }
+
+            string GetTypeText(INamedTypeSymbol type)
+            {
+                if (!typeTexts.TryGetValue(type, out var text))
+                {
+                    if (type.IsInternalAccessible())
+                    {
+                        text = $"typeof({type.GetFullNameWithoutGenericParameters()})";
                     }
                     else
                     {
-                        var symbol = model.GetDeclaredSymbol(member);
-                        VisitSymbol(symbol);
+                        text = $"@type{privateTypes.Count}";
+                        privateTypes.Add(type.GetAssemblyQualifiedName());
                     }
+
+                    typeTexts[type] = text;
                 }
 
-                foreach (var type in receiver.typeDeclarations)
-                {
-                    var model = context.Compilation.GetSemanticModel(type.SyntaxTree);
-                    var symbol = model.GetDeclaredSymbol(type);
-                    if (IsTypeRetrievable(symbol))
-                    {
-                        typeSymbols.Add(symbol);
-                    }
-                }
-
-                if (typeSymbols.Count == 0 && memberSymbols.Count == 0)
-                    return;
-
-                builder.AppendLine("using System;");
-                builder.AppendLine("using System.Reflection;");
-                builder.AppendLine("[assembly: AssemblyMetadata(\"direct-attribute\",\"1\")]");
-                builder.AppendLine("namespace com.bbbirder {");
-                builder.AppendLine("#if UNITY_5_3_OR_NEWER");
-                builder.AppendLine("[UnityEngine.Scripting.Preserve]");
-                builder.AppendLine("#endif");
-                builder.AppendLine("internal static class RetrievableMetadata {");
-                builder.AppendLine("    public static (Type,string)[] records = new  (Type, string)[] {");
-
-                foreach (var type in typeSymbols)
-                {
-                    var typePattern = type.IsInternalAccessible()
-                        ? $"typeof({type.GetFullNameWithoutGenericParameters()})"
-                        : $"Type.GetType(\"{type.GetAssemblyQualifiedName()}\")"
-                        ;
-                    builder.AppendLine($"       ({typePattern}, null),");
-                }
-
-                foreach (var member in memberSymbols)
-                {
-                    var type = member.ContainingType;
-                    var typePattern = type.IsInternalAccessible()
-                        ? $"typeof({type.GetFullNameWithoutGenericParameters()})"
-                        : $"Type.GetType(\"{type.GetAssemblyQualifiedName()}\")"
-                        ;
-                    builder.AppendLine($"       ({typePattern}, \"{member.Name}\"),");
-                }
-
-                builder.AppendLine("    };"); // end of records
-                builder.AppendLine("}"); // end of RetrieveMetadata
-                builder.AppendLine("}"); // end of namespace com.bbbirder
-
-                context.AddSource(context.Compilation.AssemblyName + ".assembly-attributes.g.cs", builder.ToString());
-
-                void VisitSymbol(ISymbol symbol)
-                {
-                    var attr = symbol.GetAttribute<DirectRetrieveAttribute>();
-                    if (attr is null) return;
-
-                    if (symbol is INamedTypeSymbol typeSymbol)
-                    {
-                        typeSymbols.Add(typeSymbol);
-                    }
-                    else
-                    {
-                        memberSymbols.Add(symbol);
-                    }
-                }
-
+                return text;
             }
-            catch (Exception e)
-            {
-                //Debugger.Launch();
-                context.ReportDiagnostic(Diagnostic.Create(DiagnosticNotGenerated,
-                    null, e.Message + "\t" + e.StackTrace.Replace("\n", "\t")));
-            }
-            //void ReportNotAccessible(Location loc, string typeName)
-            //{
-            //    context.ReportDiagnostic(Diagnostic.Create(
-            //        DiagnosticNotAccessible,
-            //        loc,
-            //        typeName
-            //    ));
-            //}
         }
 
-        public void Initialize(GeneratorInitializationContext context)
+        private static INamedTypeSymbol GetDefination(INamedTypeSymbol type)
         {
-            context.RegisterForSyntaxNotifications(() => new AttributeReceiver());
+            if (type.IsGenericType)
+            {
+                return type.ConstructUnboundGenericType();
+            }
+            else
+            {
+                return type;
+            }
         }
-
     }
 }

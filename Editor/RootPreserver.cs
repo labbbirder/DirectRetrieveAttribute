@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
-using com.bbbirder;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -49,7 +48,7 @@ namespace BBBirder.DirectAttribute.Editor
         {
             var rootsByAttribute = Retriever.GetAllAttributesInCurrentAppDomain()
                 .Where(a => a.PreserveTarget)
-                .Select(a => a.targetInfo);
+                .Select(a => a.TargetMember);
             var rootsByType = Retriever.GetAllSubtypesInCurrentAppDomain()
                 .Select(IsTypePreservedByBaseType);
 

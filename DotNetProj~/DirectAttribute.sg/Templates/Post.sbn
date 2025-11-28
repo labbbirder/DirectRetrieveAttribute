@@ -1,0 +1,83 @@
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Collections.Generic;
+#if UNITY_5_3_OR_NEWER
+using UnityEngine.Scripting;
+#endif
+
+[assembly: AssemblyMetadata("direct-attribute", "1.0")]
+
+namespace BBBirder
+{
+#if UNITY_5_3_OR_NEWER
+    [Preserve]
+#endif
+    internal static class RetrieveModule
+    {
+#if UNITY_5_3_OR_NEWER
+        [Preserve]
+#endif
+        static Dictionary<Type, HashSet<Type>> subTypes;
+
+#if UNITY_5_3_OR_NEWER
+        [Preserve]
+#endif
+        static Dictionary<Type, HashSet<MemberInfo>> targetMembers;
+
+        static Type s_attrType;
+
+        static RetrieveModule()
+        {
+            s_attrType = Type.GetType("BBBirder.DirectAttribute.DirectRetrieveAttribute, BBBirder.DirectAttribute");
+
+            {{~ for t in private_types ~}}
+            var @type{{for.index}} = Type.GetType("{{t}}");
+            {{~ end ~}}
+
+            targetMembers = new()
+            {
+            {{~ for mi in target_members ~}}
+                [{{mi.attr_type_text}}] = new HashSet<MemberInfo>()
+                    {{~ for rec in mi.records ~}}
+                    .Collect({{rec.type_text}}, "{{rec.member_name}}")
+                    {{~ end ~}}
+                    ,
+            {{~ end ~}}
+            };
+
+            subTypes = new()
+            {
+            {{~ for info in subtype_infos ~}}
+                [{{info.base_type_text}}] = new () {
+                {{~ for t in info.subtypes ~}}
+                    {{t}},
+                {{~ end ~}}
+                },
+            {{~ end ~}}
+            };
+        }
+
+        static HashSet<MemberInfo> Collect(this HashSet<MemberInfo> set,Type type, string memberName)
+        {
+            const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+            if (string.IsNullOrEmpty(memberName))
+            {
+                set.Add(type);
+            }
+            else
+            {
+                foreach (var member in type.GetMember(memberName, Flags))
+                {
+                    // we dont collect subtypes via attribute
+                    if (member.IsDefined(s_attrType, false))
+                    {
+                        set.Add(member);
+                    }
+                }
+            }
+
+            return set;
+        }
+    }
+}

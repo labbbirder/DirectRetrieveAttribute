@@ -3,48 +3,177 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using AttributeGroup = System.Collections.Generic.Dictionary<
-    System.Type,
-    com.bbbirder.DirectRetrieveAttribute[]
->;
 
 [assembly: InternalsVisibleTo("com.bbbirder.directattribute.Editor")]
 
-namespace com.bbbirder
+namespace BBBirder.DirectAttribute
 {
     public static class Retriever
     {
-        private static BindingFlags bindingFlags = 0
+        const BindingFlags AllDeclaredFlags = 0
             | BindingFlags.Instance
             | BindingFlags.Public
             | BindingFlags.NonPublic
             | BindingFlags.Static
             | BindingFlags.DeclaredOnly
             ;
-        private static WeakHolder<AttributeGroup> m_attrLut;
 
-        private static WeakHolder<AttributeGroup> attrLut => m_attrLut ??= new(() =>
+        private struct MetadataStorage
         {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .Where(IsValidAssembly)
-                .SelectMany(GetRecords)
-                .SelectMany(record => GetBaseAttributes(record, typeof(DirectRetrieveAttribute)))
-                .GroupBy(a => a.GetType() ?? typeof(object), a => a)
-                .ToDictionary(e => e.Key, e => e.ToArray());
-        });
+            public Dictionary<Type, HashSet<Type>> subTypes;
+            public Dictionary<Type, HashSet<MemberInfo>> members;
+        }
 
-        private static WeakHolder<Type[]> m_typeSet;
+        static Dictionary<Assembly, MetadataStorage> assemblyStorages = new();
+        static Dictionary<Type, HashSet<MemberInfo>> globalMarkedMembers = new();
+        static Dictionary<Type, HashSet<Type>> globalSubTypes = new();
+        static MetadataStorage globalStorage;
 
-        private static WeakHolder<Type[]> typeSet => m_typeSet ??= new(() =>
+        static Retriever()
         {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .Where(IsValidAssembly)
-                .SelectMany(GetRecords)
-                .Select(record => record.type)
-                .Distinct()
-                .ToArray()
-                ;
-        });
+            globalStorage = new()
+            {
+                members = globalMarkedMembers,
+                subTypes = globalSubTypes,
+            };
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic);
+            foreach (var assembly in assemblies)
+            {
+                EnsureAssemblyStoragePopulated(assembly);
+            }
+        }
+
+        private static TValue EnsureKey<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key) where TValue : new()
+        {
+            if (!dict.TryGetValue(key, out var result))
+            {
+                dict[key] = result = new();
+            }
+
+            return result;
+        }
+
+        private static MetadataStorage EnsureAssemblyStoragePopulated(Assembly assembly)
+        {
+            if (!IsValidAssembly(assembly)) return default;
+
+            if (!assemblyStorages.TryGetValue(assembly, out var storage))
+            {
+                var typeModule = assembly.GetType("BBBirder.RetrieveModule");
+                if (typeModule != null)
+                {
+                    var targetMembers = typeModule.GetField("targetMembers", AllDeclaredFlags).GetValue(null) as Dictionary<Type, HashSet<MemberInfo>>;
+                    var subTypes = typeModule.GetField("subTypes", AllDeclaredFlags).GetValue(null) as Dictionary<Type, HashSet<Type>>;
+                    storage = new()
+                    {
+                        members = targetMembers,
+                        subTypes = subTypes,
+                    };
+
+                    foreach (var (baseType, types) in subTypes)
+                    {
+                        globalSubTypes.EnsureKey(baseType).UnionWith(types);
+                    }
+
+                    foreach (var (attrType, members) in targetMembers)
+                    {
+                        globalMarkedMembers.EnsureKey(attrType).UnionWith(members);
+                    }
+                }
+
+                assemblyStorages[assembly] = storage;
+            }
+
+            return storage;
+        }
+
+        [ThreadStatic] static Stack<Type> s_waveFront;
+        [ThreadStatic] static HashSet<Type> s_visited;
+        private static void GetSubtypes(Type baseType, MetadataStorage storage, HashSet<Type> results)
+        {
+            var visited = s_visited ??= new();
+            visited.Clear();
+
+            var waveFront = s_waveFront ??= new();
+            waveFront.Clear();
+
+            var baseDefType = baseType.IsGenericType ? baseType.GetGenericTypeDefinition() : baseType;
+            waveFront.Push(baseDefType);
+            visited.Add(baseDefType);
+            while (waveFront.TryPop(out var type))
+            {
+                if (globalSubTypes.TryGetValue(type, out var subTypes))
+                {
+                    foreach (var t in subTypes)
+                    {
+                        if (visited.Add(t))
+                        {
+                            waveFront.Push(t);
+                        }
+                    }
+
+
+                    if (storage.subTypes.TryGetValue(type, out var types))
+                    {
+                        if (baseDefType.IsGenericType)
+                        {
+                            if (baseDefType.IsGenericTypeDefinition)
+                            {
+                                results.UnionWith(types);
+                            }
+                            else if (baseDefType.IsConstructedGenericType)
+                            {
+                                foreach (var t in types)
+                                {
+                                    if (baseDefType.IsAssignableFrom(t))
+                                    {
+                                        results.Add(t);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                throw new("Not support partial constructed generic type");
+                            }
+                        }
+                        else
+                        {
+                            results.UnionWith(types);
+                        }
+                    }
+                }
+            }
+
+            visited.Clear();
+        }
+
+        [ThreadStatic] static HashSet<Type> s_attrTypes;
+        private static void GetAttributes(Type attrType, MetadataStorage storage, List<DirectRetrieveAttribute> results)
+        {
+            var attrTypes = s_attrTypes ??= new();
+            attrTypes.Clear();
+            GetSubtypes(attrType, globalStorage, attrTypes);
+            attrTypes.Add(attrType);
+            foreach (var type in attrTypes)
+            {
+                if (storage.members.TryGetValue(type, out var members))
+                {
+                    foreach (var member in members)
+                    {
+                        foreach (var attr in member.GetCustomAttributes(attrType))
+                        {
+                            if (attr is DirectRetrieveAttribute dattr)
+                            {
+                                dattr.TargetMember = member;
+                                dattr.OnReceiveTarget();
+                                results.Add(dattr);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         internal static bool IsValidAssembly(Assembly assembly)
         {
@@ -53,41 +182,14 @@ namespace com.bbbirder
                 ;
         }
 
-        internal static (Type type, string memberName)[] GetRecords(Assembly assembly)
-        {
-            var type = assembly.GetType("com.bbbirder.RetrievableMetadata");
-            RuntimeHelpers.RunClassConstructor(type.TypeHandle);
-            return type.GetField("records", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .GetValue(null) as (Type type, string memberName)[];
-        }
-
-        private static IEnumerable<DirectRetrieveAttribute> GetBaseAttributes((Type type, string memberName) record, Type attributeType)
-        {
-            var (type, memberName) = record;
-            if (memberName != null)
-            {
-                return type.GetMember(memberName, bindingFlags).SelectMany(
-                    member => member.GetCustomAttributes(attributeType, false).Select(
-                        ca => SetAttributeValue(ca as DirectRetrieveAttribute, member)
-                    )
-                );
-            }
-            else
-            {
-                return type.GetCustomAttributes(attributeType, false).Select(
-                    ca => SetAttributeValue(ca as DirectRetrieveAttribute, type)
-                );
-            }
-        }
-
         /// <summary>
         /// Retrieve attributes of type T in all loaded assemblies
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T[] GetAllAttributes<T>() where T : DirectRetrieveAttribute
+        public static IEnumerable<T> GetAllAttributes<T>() where T : DirectRetrieveAttribute
         {
-            return GetAllAttributes(typeof(T)).OfType<T>().ToArray();
+            return GetAllAttributes(typeof(T)).OfType<T>();
         }
 
         /// <summary>
@@ -95,16 +197,14 @@ namespace com.bbbirder
         /// </summary>
         /// <param name="attributeType"></param>
         /// <returns></returns>
-        public static DirectRetrieveAttribute[] GetAllAttributes(Type attributeType)
+        public static IEnumerable<DirectRetrieveAttribute> GetAllAttributes(Type attributeType)
         {
 #if DEBUG
             CheckAttribute(attributeType);
 #endif
-            return attrLut.Value.ToArray()
-                .Where(a => attributeType.IsAssignableFrom(a.Key))
-                .SelectMany(a => a.Value)
-                .ToArray()
-                ;
+            var results = new List<DirectRetrieveAttribute>();
+            GetAttributes(attributeType, globalStorage, results);
+            return results;
         }
 
         /// <summary>
@@ -113,16 +213,19 @@ namespace com.bbbirder
         /// <param name="attributeType"></param>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public static DirectRetrieveAttribute[] GetAllAttributes(Type attributeType, Assembly assembly)
+        public static IEnumerable<DirectRetrieveAttribute> GetAllAttributes(Type attributeType, Assembly assembly)
         {
 #if DEBUG
             CheckAttribute(attributeType);
 #endif
             if (!IsValidAssembly(assembly))
                 return Array.Empty<DirectRetrieveAttribute>();
-            return GetRecords(assembly)
-                .SelectMany(record => GetBaseAttributes(record, attributeType))
-                .ToArray();
+
+            var storage = EnsureAssemblyStoragePopulated(assembly);
+
+            var results = new List<DirectRetrieveAttribute>();
+            GetAttributes(attributeType, storage, results);
+            return results;
         }
 
         /// <summary>
@@ -131,10 +234,9 @@ namespace com.bbbirder
         /// <param name="assembly"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T[] GetAllAttributes<T>(Assembly assembly) where T : DirectRetrieveAttribute
+        public static IEnumerable<T> GetAllAttributes<T>(Assembly assembly) where T : DirectRetrieveAttribute
         {
-            var attrType = typeof(T);
-            return GetAllAttributes(attrType, assembly).OfType<T>().ToArray();
+            return GetAllAttributes(typeof(T), assembly).OfType<T>();
         }
 
         /// <summary>
@@ -142,50 +244,27 @@ namespace com.bbbirder
         /// </summary>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        public static Type[] GetAllSubtypes(Type baseType)
+        public static HashSet<Type> GetAllSubtypes(Type baseType)
         {
-            return typeSet.Value.Where(t => t != baseType)
-                .Distinct()
-                .Where(t => t != baseType && IsTypeOf(t, baseType))
-                .ToArray()
-                ;
+            var results = new HashSet<Type>();
+            GetSubtypes(baseType, globalStorage, results);
+            return results;
         }
 
-        internal static Type[] GetAllSubtypesInCurrentAppDomain()
+        internal static HashSet<Type> GetAllSubtypesInCurrentAppDomain()
         {
-            return typeSet.Value
-                .ToArray()
-                ;
+            var results = new HashSet<Type>();
+            foreach (var (baseType, types) in globalSubTypes)
+            {
+                GetSubtypes(baseType, globalStorage, results);
+            }
+
+            return results;
         }
 
-        internal static DirectRetrieveAttribute[] GetAllAttributesInCurrentAppDomain()
+        internal static IEnumerable<DirectRetrieveAttribute> GetAllAttributesInCurrentAppDomain()
         {
-            return attrLut.Value.SelectMany(r => r.Value)
-                .ToArray()
-                ;
-        }
-
-        private static bool IsTypeOf(Type type, Type baseType)
-        {
-            if (baseType.IsGenericTypeDefinition)
-            {
-                return GetTypesTowardsBase(type).Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType)
-                    || type.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == baseType)
-                    ;
-            }
-            else
-            {
-                return baseType.IsAssignableFrom(type);
-            }
-
-            static IEnumerable<Type> GetTypesTowardsBase(Type type)
-            {
-                while (type != null)
-                {
-                    yield return type;
-                    type = type.BaseType;
-                }
-            }
+            return GetAllAttributes(typeof(DirectRetrieveAttribute));
         }
 
         /// <summary>
@@ -193,7 +272,7 @@ namespace com.bbbirder
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static Type[] GetAllSubtypes<T>()
+        public static IEnumerable<Type> GetAllSubtypes<T>()
         {
             return GetAllSubtypes(typeof(T));
         }
@@ -204,7 +283,7 @@ namespace com.bbbirder
         /// <param name="assembly"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static Type[] GetAllSubtypes<T>(Assembly assembly)
+        public static IEnumerable<Type> GetAllSubtypes<T>(Assembly assembly)
         {
             return GetAllSubtypes(typeof(T), assembly);
         }
@@ -215,16 +294,15 @@ namespace com.bbbirder
         /// <param name="assembly"></param>
         /// <param name="baseType"></param>
         /// <returns></returns>
-        public static Type[] GetAllSubtypes(Type baseType, Assembly assembly)
+        public static IEnumerable<Type> GetAllSubtypes(Type baseType, Assembly assembly)
         {
             if (!IsValidAssembly(assembly))
                 return Array.Empty<Type>();
 
-            return GetRecords(assembly)
-                .Select(record => record.type)
-                .Distinct()
-                .Where(t => t != baseType && IsTypeOf(t, baseType))
-                .ToArray();
+            var storage = EnsureAssemblyStoragePopulated(assembly);
+            var results = new HashSet<Type>();
+            GetSubtypes(baseType, storage, results);
+            return results;
         }
 
         private static void CheckAttribute(Type attributeType)
@@ -233,38 +311,6 @@ namespace com.bbbirder
             {
                 throw new($"type {attributeType} is not a DirectRetrieveAttribute");
             }
-        }
-
-        // [Conditional("DIRECT_RETRIEVE_ATTRIBUTE_STRICT")]
-        //static void CheckBasetype(Type baseType)
-        //{
-        //    if (!IsTypeRetrievable(baseType))
-        //    {
-        //        throw new($"type {baseType} is not retrievable, which should inherit from IDirectRetrieve");
-        //    }
-        //}
-
-        // public static bool IsTypeRetrievable(Type type)
-        // {
-        //     return IsBaseType(type, typeof(IDirectRetrieve));
-        // }
-
-        // private static bool IsBaseType(Type subType, Type baseType)
-        // {
-        //     if (subType == baseType)
-        //         return false;
-
-        //     if (baseType.IsInterface)
-        //         return baseType.IsAssignableFrom(subType);
-        //     else
-        //         return subType.IsSubclassOf(baseType);
-        // }
-
-        private static T SetAttributeValue<T>(T attr, MemberInfo targetInfo) where T : DirectRetrieveAttribute
-        {
-            attr.targetInfo = targetInfo;
-            attr.OnReceiveTarget();
-            return attr;
         }
     }
 }

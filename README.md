@@ -6,15 +6,13 @@
 
 ## 为什么有用
 
-使用额外的全局元数据而不是反射遍历来实现Attribute获取。**（并且自动preserve标记的类型）**
+使用额外的全局数据而不是反射遍历来实现Attribute查找和子类查找。（允许自动preserve目标）
 
 可以满足以下三大常见需求：
 
 * **高效**获取Attribute
 * **高效**获取子类（提供basetype）和实现类（提供interface）
 * 通过Attribute实例**直接获取**标记的类或成员
-
-参考 [基准测试结果](#基准测试结果)
 
 ## 快速开始
 
@@ -33,22 +31,26 @@ openupm add com.bbbirder.directattribute
 ### 检索Attribute
 
 ```csharp
-using com.bbbirder;
+using BBBirder.DirectAttribute;
 
 //自定义Attribute继承DirectRetrieveAttribute
-class FooAttribute:DirectRetrieveAttribute 
+class FooAttribute : DirectRetrieveAttribute 
 {
+    // 自动Preserve标记的成员，防止strip
+    public override bool PreserveTarget => true;
+
     public string title { get; private set; }
     
     public FooAttribute(string title)
     {
         this.title = title;
-        // dont access targetType here, it will always be null
+        // dont access TargetMember here, it will always be null
     }
     
     public override void OnReceiveTarget()
     {
-        // targetType is available here ^_^
+        // TargetMember is available here ^_^
+        Debug.Log(TargetMember);
     }
 }
 
@@ -67,19 +69,19 @@ class Player
 FooAttribute[] attributes = Retriever.GetAllAttributes<FooAttribute>(); 
 foreach(var attr in attributes)
 {
-    print($"{attr.targetType} {attr.targetMember?.Name} {attr.title}"); 
+    print($"{attr.TargetMember.Name} {attr.title}"); 
 }
 // output: 
-//    Player null whoami
-//    Player Salute Hello
+//    Player whoami
+//    Salute Hello
 ```
 
-> 自定义Attribute需要继承`DirectRetrieveAttribute`。`Retriever.GetAllAttributes`会在检索过程中赋值目标类型`targetType`和成员`targetMember`并调用`OnReceiveTarget()`通知赋值完成。
+> 自定义Attribute需要继承`DirectRetrieveAttribute`。`Retriever.GetAllAttributes`会在检索过程中赋值目标成员`TargetMember`并调用`OnReceiveTarget()`通知赋值完成。
 
 ### 检索子类型
 
 ```csharp
-using com.bbbirder;
+using BBBirder.DirectAttribute;
 
 // 定义几个类型
 public class Battler:IDirectRetrieve
@@ -98,8 +100,9 @@ public class Titant:Hero
 }
 
 // 获取Domain下所有Battler子类
-Type[] types = Retriever.GetAllSubtypes(typeof(Battler));
-foreach(var type in types){
+Type[] types = Retriever.GetAllSubtypes<Battler>();
+foreach(var type in types)
+{
     print($"{type.Name}");
 }
 // output:
@@ -123,61 +126,60 @@ AppDomain.CurrentDomain.GetAssemblies()
     .ToArray();
 ```
 
-> 众所周知，反射方法效率低，并且会产生大量GC。如果你是一个Package Developer，在你开发的众多Package中可能有不少需要检索Attribute列表的情况，这无疑是灾难性的。（参考[基准测试结果](#基准测试结果)）
-
-### 基准测试结果
-
-![benchmark](Documentation/benchmark.jpg)
-
-* `GetMemberAttributesDefault`使用传统方式检索所有Attribute，
-* `GetMemberAttributesWithReferenceCheck`使用传统方式检索，但是先检查Assembly之间的依赖关系。
-* `GetMemberAttributesDirect`使用Direct方式检索所有Attribute。
-
-可以得出结论如下：
-
-||运行时间| 内存消耗|每用户代码体积增长|
-|--|--|--|--|
-|传统方式|100%|100%|开销线性增加|
-|Direct|<5%|<1%|开销几乎不变|
-
-[基准测试源码](Documentation/benchmark.md)
-
-值得一提的是，以上的结果还只是基于理论的测试，在实际应用中，DirectRetrieveAttribute因考虑到检索通常集中地发生在开始运行阶段，因此在内部做了一点小小的优化：使用WeakReference缓冲了一下中间计算。结果是，Direct方式开销小到无法察觉（见下图）！
-![benchmark](Documentation/benchmark-real.jpg)
-
-实际差异如下：
-
-||运行时间| 内存消耗|每用户代码体积增长|
-|--|--|--|--|
-|传统方式|100%|100%|开销线性增加|
-|Direct|<0.1%|<0.1%|开销几乎不变|
+> 众所周知，反射方法效率低，并且会产生大量GC。如果你是一个Package Developer，在你开发的众多Package中可能有不少需要检索Attribute列表的情况，这无疑是灾难性的。
 
 ## 实现原理
 
-开发者编辑代码时使用源生成方式写入assembly Attribute列表（名为`GeneratedDirectRetrieveAttribute`），并提供RoslynAnalyzer保证代码准确性。
+开发者编辑代码时使用源生成方式写入额外信息，并提供RoslynAnalyzer保证代码准确性。
+
+> 现在，只有真正编译发生时，才分析语法，并生成这些信息。
 
 使用反编译工具打开Unity自动生成的Dll，可以看到类似下面的额外元数据：
 
 ```csharp
-[assembly: GeneratedDirectRetrieve(typeof(global::Program))]
-[assembly: GeneratedDirectRetrieve(typeof(global::Program),"Main")]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>))]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>),"age")]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>),"Inner")]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.Player<,>.Inner))]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.IPlayer))]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.bbbirder))]
-[assembly: GeneratedDirectRetrieve(typeof(com.Another.ns.labbbider))]
+
+namespace BBBirder
+{
+    internal static class RetrieveModule
+    {
+        static Dictionary<Type, HashSet<Type>> subTypes;
+
+        static Dictionary<Type, HashSet<MemberInfo>> targetMembers;
+
+        static Type s_attrType;
+
+        static RetrieveModule()
+        {
+            s_attrType = Type.GetType("BBBirder.DirectAttribute.DirectRetrieveAttribute, BBBirder.DirectAttribute");
+
+            // 涉及到的上层模块类型，需要通过AQN获取
+            var @type0 = Type.GetType("MyType1, MyModule");
+
+            // 当前模块的Attribute字典
+            targetMembers = new()
+            {
+                [typeof(MyAttribute)] = new HashSet<MemberInfo>()
+                    .Collect(typeof(MyType2), "MyMethod2")
+                    .Collect(@type0, "MyMethod")
+                    ,
+            };
+
+            // 当前模块的类型继承树
+            subTypes = new()
+            {
+                [@type0] = new () {
+                    typeof(MyType2),
+                    typeof(MyType3),
+                    typeof(MyType4),
+                },
+            };
+        }
+
+    }
+}
+
 ```
 
-对于Inherit的Attribute，会额外记录他们的子类。
+## 为什么不实现写入MetadataToken到Assembly Resource？
 
-在运行时直接从全局元数据中获得`GeneratedDirectRetrieveAttribute`列表。
-
-## 目录结构
-
-大致目录如下：
-
-* `Editor` :自动安装功能
-* `Runtime` :运行时检索功能
-* `VSProj~` :RoslynAnalyzer的源码
+考虑到有的项目可能需要DLL织入，MetadataToken会发生变化。

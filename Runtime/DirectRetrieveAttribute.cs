@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.InteropServices;
+
 
 #if UNITY_5_3_OR_NEWER
 using UnityEngine.Scripting;
 #endif
 
-namespace com.bbbirder
+namespace BBBirder.DirectAttribute
 {
     /// <summary>
     /// Define on arbitrary type or member to retrieve the target directly at runtime.
@@ -13,18 +15,19 @@ namespace com.bbbirder
 #if UNITY_5_3_OR_NEWER
     [Preserve]
 #endif
+    [RetrieveSubtype]
     public partial class DirectRetrieveAttribute : Attribute
     {
-        /// <summary>
-        /// Whether the target should be automatically preserved in build.
-        /// </summary>
-        public virtual bool PreserveTarget => false;
-
         /// <summary>
         /// the member marked with this attribute, if exists.
         /// </summary>
         /// <value></value>
-        public MemberInfo targetInfo { get; internal set; }
+        public MemberInfo TargetMember { get; set; }
+
+        /// <summary>
+        /// Whether the target should be automatically preserved in build.
+        /// </summary>
+        public virtual bool PreserveTarget => false;
 
         /// <summary>
         /// on receive target type and member
