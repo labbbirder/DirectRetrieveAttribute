@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using Microsoft.CodeAnalysis;
 
@@ -119,27 +120,82 @@ namespace DirectAttribute.sg
 
         private static T ToAttribute<T>(this AttributeData data) where T : Attribute
         {
-            if (data is null) return null;
-            var constructorArguments = data.ConstructorArguments.Select(a => a.Kind == TypedConstantKind.Array ? a.Values : a.Value).ToArray();
-            var attribute = default(T);
-            try
+            if (data == null) return null;
+
+            var type = typeof(T);
+
+            var constructorArgs = data.ConstructorArguments
+                .Select(GetActualValue)
+                .ToArray();
+
+            var attribute = (T)Activator.CreateInstance(type, constructorArgs);
+
+            foreach (var namedArg in data.NamedArguments)
             {
-                attribute = Activator.CreateInstance(typeof(T), constructorArguments) as T;
-            }
-            catch
-            {
-                attribute = FormatterServices.GetUninitializedObject(typeof(T)) as T;
+                var value = GetActualValue(namedArg.Value);
+                var name = namedArg.Key;
+
+                var prop = type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+                if (prop != null)
+                {
+                    prop.SetValue(attribute, value);
+                    continue;
+                }
+
+                var field = type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+                if (field != null)
+                {
+                    field.SetValue(attribute, value);
+                }
             }
 
-            foreach (var pair in data.NamedArguments)
-            {
-                var name = pair.Key;
-                var value = pair.Value.Value;
-                attribute.GetType().GetProperty(name)?.SetValue(attribute, value);
-                attribute.GetType().GetField(name)?.SetValue(attribute, value);
-            }
-
-            return attribute as T;
+            return attribute;
         }
+
+        private static object GetActualValue(TypedConstant constant)
+        {
+            if (constant.IsNull) return null;
+
+            if (constant.Kind == TypedConstantKind.Array)
+            {
+                var values = constant.Values;
+                var elementType = GetRuntimeType(constant.Type) ?? typeof(object);
+                var array = Array.CreateInstance(elementType, values.Length);
+
+                for (int i = 0; i < values.Length; i++)
+                {
+                    array.SetValue(GetActualValue(values[i]), i);
+                }
+
+                return array;
+            }
+
+            if (constant.Kind == TypedConstantKind.Enum)
+            {
+                var enumType = GetRuntimeType(constant.Type);
+                if (enumType != null)
+                {
+                    return Enum.ToObject(enumType, constant.Value);
+                }
+            }
+
+            if (constant.Value is ITypeSymbol typeSymbol)
+            {
+                return GetRuntimeType(typeSymbol);
+            }
+
+            return constant.Value;
+        }
+
+        private static Type GetRuntimeType(ITypeSymbol symbol)
+        {
+            var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                .Replace("global::", "");
+            return Type.GetType(name) ??
+                   AppDomain.CurrentDomain.GetAssemblies()
+                       .Select(a => a.GetType(name))
+                       .FirstOrDefault(t => t != null);
+        }
+
     }
 }

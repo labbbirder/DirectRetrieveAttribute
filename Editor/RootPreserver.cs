@@ -108,40 +108,34 @@ namespace BBBirder.DirectAttribute.Editor
                 foreach (var typeGroup in typeToMembersGroups)
                 {
                     var type = typeGroup.Key;
-                    var memberNames = typeGroup.Select(r => r.member?.Name);
+                    var members = typeGroup.Select(r => r.member).Where(m => m != null);
 
                     var eleType = doc.CreateElement("type");
-                    //Fix: change "name" to "fullname", it doesn't work as Unity Manual says.
+                    //Fix: change "name" to "fullname", it doesn't work as it is said in Unity Manual.
                     eleType.SetAttribute("fullname", type.FullName.Replace("+", "/"));
                     eleType.SetAttribute("preserve", "nothing");
 
-                    foreach (var memberName in memberNames)
+                    foreach (var member in members)
                     {
-                        if (string.IsNullOrEmpty(memberName)) continue;
+                        var memberName = member?.Name;
+                        if (string.IsNullOrWhiteSpace(memberName)) continue;
 
-                        var members = type.GetMember(memberName, bindingFlags).Where(
-                            member => member.GetCustomAttribute<DirectRetrieveAttribute>() != null
-                        );
-
-                        foreach (var member in members)
+                        var memberTypeKeyword = member.MemberType switch
                         {
-                            var memberTypeKeyword = member.MemberType switch
-                            {
-                                MemberTypes.Event => "event",
-                                MemberTypes.Constructor => "method",
-                                MemberTypes.Field => "field",
-                                MemberTypes.Method => "method",
-                                MemberTypes.Property => "property",
-                                _ => null,
-                            };
+                            MemberTypes.Event => "event",
+                            MemberTypes.Constructor => "method",
+                            MemberTypes.Field => "field",
+                            MemberTypes.Method => "method",
+                            MemberTypes.Property => "property",
+                            _ => null,
+                        };
 
-                            if (string.IsNullOrEmpty(memberTypeKeyword)) continue;
+                        if (string.IsNullOrEmpty(memberTypeKeyword)) continue;
 
-                            // eleType.RemoveAttribute("preserve");
-                            var eleMember = doc.CreateElement(memberTypeKeyword);
-                            eleMember.SetAttribute("name", memberName);
-                            eleType.AppendChild(eleMember);
-                        }
+                        // eleType.RemoveAttribute("preserve");
+                        var eleMember = doc.CreateElement(memberTypeKeyword);
+                        eleMember.SetAttribute("name", memberName);
+                        eleType.AppendChild(eleMember);
                     }
 
                     eleAsm.AppendChild(eleType);
